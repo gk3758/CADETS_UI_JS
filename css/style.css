@@ -1,0 +1,103 @@
+
+body{
+	color: white;
+}
+.fill{
+	width: 100%;
+	height: 100%;
+	position: absolute;
+	top: 0%;
+	left: 0%;
+}
+
+.fillHeader{
+	background-color: black;
+	width: 100%;
+	height: 10%;
+	position: absolute;
+	top: 0%;
+	left: 0%;
+}
+.headerObject{
+	width: 25%;
+	height: 100%;
+	position: absolute;
+	top: 0%;
+	left: 0%;
+}
+.headerButtons{
+	height: 100%;
+	position: absolute;
+	top: 0%;
+	left: 25%;
+}
+.fillBody{
+	width: 100%;
+	height: 90%;
+	position: absolute;
+	top: 10%;
+	left: 0%;
+}
+.analysisWorksheet{
+	background-color: green;
+	width: 33%;
+	height: 100%;
+	position: absolute;
+	top: 0%;
+	left: 0%;
+}
+.collapsedAnalysisWorksheet{
+	display: none; 
+}
+.worksheet{
+	width: 33%;
+	height: 100%;
+	position: absolute;
+	top: 0%;
+	left: 33%;
+}
+.expandedWorksheet{
+	width: 66%;
+	height: 100%;
+	position: absolute;
+	top: 0%;
+	left: 0%;
+}
+#worksheetGraph{
+	width: 100%;
+	height: 100%;
+	position: absolute;
+	top: 0%;
+	left: 0%;
+}
+#inspectorGraph{
+	width: 100%;
+	height: 100%;
+	position: absolute;
+	top: 0%;
+	left: 0%;
+}
+.worksheetBtns{
+	background-color: purple;
+	width: 75%;
+	height: 10%;
+	position: absolute;
+	top: 90%;
+	left: 25%;
+}
+.inspector{
+	background-color: yellow;
+	width: 34%;
+	height: 90%;
+	position: absolute;
+	top: 0%;
+	left: 66%;
+}
+.filter{
+	background-color: red;
+	width: 34%;
+	height: 10%;
+	position: absolute;
+	top: 90%;
+	left: 66%;
+}

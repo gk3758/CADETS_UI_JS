@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>CADETS/OPUD_GUI</title>
+		<link href="css/style.css" rel="stylesheet" />
+
+		<link rel="stylesheet" href="node_modules/vex-js/dist/css/vex.css" />
+		<link rel="stylesheet" href="node_modules/vex-js/dist/css/vex-theme-os.css" />
+
+		<link href="node_modules/cytoscape-context-menus/cytoscape-context-menus.css" rel="stylesheet" />
+
+        <script src="node_modules/vex-js/dist/js/vex.combined.min.js"></script>
+
+    	<script src="node_modules/jquery/dist/jquery.js"></script>
+
+		<!--<script src="node_modules/cytoscape/dist/cytoscape.js"></script>-->
+		<script src="node_modules/cytoscape/dist/cytoscape.min.js"></script>
+		<script src="node_modules/cytoscape-context-menus/cytoscape-context-menus.js"></script>
+
+		<!<script src="js/worksheet.js"></script>
+		<script src="js/graphing.js"></script>
+	</head>
+	<body>
+		<div class="fill">
+			<div class="fillHeader">
+				<div class="headerObject">CADETS/OPUS</div>
+				<div class="headerButtons">
+					<button type="button"></button>
+					<button type="button" id="machinesBtn">Machines</button>
+					<button type="button" id="notificationsBtn">Notifications</button>
+					<button type="button" id="WorksheetsBtn">Worksheets</button>
+				</div>
+			</div>
+			<div class=fillBody>
+				<!--<div class="machinesPage"></div>swap logic for pages
+				<div class="notificationsPage"></div>-->
+				<div class="worksheetPage">
+					<div class="analysisWorksheet" id="analysisWorksheet"></div>
+					<div class="worksheet" id="worksheet">
+						<div id="worksheetGraph"></div>
+						<div class="worksheetBtns">
+							<button type="button" class="bodyButton" id="hideAnalysisWorksheet" onclick="toggle_sidebar()">Toggle <br>SideBar</button>
+							<button type="button" class="bodyButton" id="loadGraph"></button>
+							<button type="button" class="bodyButton" id="saveGraph"></button>
+							<button type="button" class="bodyButton" id="reDagre"></button>
+							<button type="button" class="bodyButton" id="reCose-Bilkent"
+							onclick="cose()">Cose</button>
+						</div>
+					</div>
+					<div class="inspector">
+						<div id="inspectorGraph"></div>
+						<div class="fillHeader">Inspector</div>
+					</div>
+					<div class="filter">
+						<input type="checkbox" name="filess" value="showFiles">Files</input>
+						<input type="checkbox" name="sockets" value="showSockets">Sockets</input>
+						<input type="checkbox" name="pipes" value="showPipes">Pipes</input>
+						<input type="checkbox" name="processMetaData" value="showProcessMetaData">ProcessMetaData</input>
+
+					</div>
+				</div>
+			</div>
+		</div>
+		<!--<div id="cy"></div>
+		<script type="text/javascript"></script>-->
+		<script src='js/bundle.js'></script>
+	</body>
+</html>
