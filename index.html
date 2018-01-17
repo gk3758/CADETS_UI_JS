@@ -8,8 +8,8 @@
 		<link rel="stylesheet" href="node_modules/vex-js/dist/css/vex-theme-os.css" />
 		<link href="node_modules/cytoscape-context-menus/cytoscape-context-menus.css" rel="stylesheet" />
 
-        <script src="node_modules/vex-js/dist/js/vex.combined.min.js"></script>
-    	<script src="node_modules/jquery/dist/jquery.js"></script>
+		<script src="node_modules/vex-js/dist/js/vex.combined.min.js"></script>
+		<script src="node_modules/jquery/dist/jquery.js"></script>
 		<script src="node_modules/cytoscape/dist/cytoscape.min.js"></script>
 		<script src="node_modules/cytoscape-context-menus/cytoscape-context-menus.js"></script>
 
@@ -29,7 +29,55 @@
 			</div>
 			<div class=fillBody>
 				<div class="worksheetPage">
-					<div class="analysisWorksheet" id="analysisWorksheet"></div>
+					<div class="analysisWorksheet" id="analysisWorksheet">
+						
+						
+						<div class="panel panel-info">
+							<div class="panel-heading">Available nodes:
+								<form id="nodeFilters" class="form-horizontal well" method="get">
+									<fieldset>
+										<div class="form-group">
+											<label for="filterNodeType" class="col-md-2 control-label">Type</label>
+											<div class="col-md-10">
+												<select id="filterNodeType" class="form-control">
+													<option></option>
+													<option>connection</option>
+													<option>file-version</option>
+													<option>pipe-endpoint</option>
+													<option>process</option>
+													<option>process-meta</option>
+													<option>socket-version</option>
+													<option>machine</option>
+												</select>
+											</div>
+											<label for="filterName" class="col-md-2 control-label">Name</label>
+											<div class="col-md-10">
+												<input id="filterName" class="form-control"/>
+											</div>
+											<label for="filterHost" class="col-md-2 control-label">Host</label>
+											<div class="col-md-10">
+												<input id="filterHost" class="form-control"/>
+											</div>
+											<label for="filterTuple" class="col-md-2 control-label">TCP</label>
+											<div id="filterTuple" class="col-md-10">
+												<input id="filterLocalIp" size="10"/>
+												<input id="filterLocalPort" size="3"/>L<br/>
+												<input id="filterRemoteIp" size="10"/>
+												<input id="filterRemotePort" size="3"/>R
+											</div>
+										</div>
+									</fieldset>
+								</form>
+							</div>
+							<div class="panel-body">
+								<table class="table table-hover">
+									<tbody id="nodelist"></tbody>
+								</table>
+							</div>
+						</div>
+
+
+					</div>
 					<div class="worksheet" id="worksheet">
 						<div id="worksheetGraph"></div>
 						<div class="worksheetBtns">
