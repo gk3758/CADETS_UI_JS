@@ -1,0 +1,32 @@
+{
+  "name": "CADETS_UI_JS",
+  "version": "1.0.0",
+  "description": "CADETS_UI_JS",
+  "main": "webpack.config.js",
+  "dependencies": {
+    "cytoscape": "^3.2.7",
+    "cytoscape-context-menus": "^3.0.5",
+    "jquery": "^3.2.1",
+    "vex-js": "^4.0.1"
+  },
+  "devDependencies": {
+    "cytoscape": "^3.2.7",
+    "cytoscape-context-menus": "^3.0.5",
+    "jquery": "^3.2.1",
+    "vex-js": "^4.0.1"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gk3758/CADETS_UI_JS.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/gk3758/CADETS_UI_JS/issues"
+  },
+  "homepage": "https://github.com/gk3758/CADETS_UI_JS#readme"
+}

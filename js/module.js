@@ -1,7 +1,3 @@
-const cytoscape = require('../node_modules/cytoscape/dist/cytoscape.min.js');
-
-//require('../css/style.css');
-
 var worksheetGraph = cytoscape({
 	container: document.getElementById('worksheetGraph'),
 	elements: [
@@ -120,14 +116,6 @@ var worksheetGraph = cytoscape({
 		'width': 1
 	})
 });
-function cose(){
-	var layout = worksheetGraph.layout({
-	  name: 'cose'
-	});
-
-	layout.run();
-	return;
-}
 
 var cy2 = cytoscape({
 	container: document.getElementById('inspectorGraph'),
