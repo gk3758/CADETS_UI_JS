@@ -250,3 +250,17 @@ var cy2 = cytoscape({
 
 //var string = cy.json();
 //console.log(string);
+
+//Button logic
+document.getElementById("hideAnalysisWorksheet").onclick = function () { 
+  $('#analysisWorksheet').toggleClass('collapsedAnalysisWorksheet');
+  $('#worksheet').toggleClass('expandedWorksheet');
+  $('#worksheetGraph').toggleClass('expandedWorksheet');
+};
+
+document.getElementById("reCose-Bilkent").onclick = function () { 
+	var layout = worksheetGraph.layout({
+	  name: 'cose'
+	});
+	layout.run();
+};
