@@ -80,7 +80,7 @@ var worksheetGraph = {
 var worksheetCxtMenu = {
 	menuRadius: 140,
 	separatorWidth: 5,
-	selector: 'core',
+	selector: 'node',
 	commands: [
 		{
 			content: 'Inspect',
@@ -149,7 +149,7 @@ var worksheetCxtMenu = {
 	]
 };
 
-worksheetGraph.graph.cxtMenu = worksheetCxtMenu;
+worksheetGraph.graph.cxtmenu = worksheetCxtMenu;
 
 var cy = cytoscape({
 	container: document.getElementById('machineGraph'),
@@ -453,7 +453,7 @@ document.getElementById("hideAnalysisWorksheet").onclick = function () {
 
 document.getElementById("loadGraph").onchange = function () {
 	load(this.files[0], worksheetGraph);
-	//worksheetGraph.graph.contextMenus(worksheetContextMenu);
+	worksheetGraph.graph.cxtmenu = worksheetCxtMenu;
 };
 
 document.getElementById("saveGraph").onclick = function () { 
