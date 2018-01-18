@@ -28,12 +28,43 @@
 				</div>
 			</div>
 			<div class=fillBody>
-				<div id="machinePage" >
-					<div id="machineGraph"></div>
+				
+				<div class="fill" id="machinePage" >
+					<div class="fill" id="machineGraph"></div>
 				</div>
-				<div class="hide" id="notificationPage"></div>
+				<div class="fill hide" id="notificationPage">
+					<table class="table table-striped">
+						<thead>
+							<tr>
+								<th>Time</th>
+								<th>Local</th>
+								<th>Remote</th>
+								<th>Event</th>
+								<th></th>
+					 		</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td>{{ alert.timestamp }}</td>
+								<td>
+									<a href="worksheet?nodeType=socket-version&tcp={{ alert.local_ip }}:{{ alert.local_port }}::">{{ alert.local_ip }}:{{ alert.local_port }}
+									</a>
+								</td>
+								<td>
+									<a href="worksheet?nodeType=socket-version&tcp=::{{ alert.remote_ip }}:{{ alert.remote_port }}">{{ alert.remote_ip }}:{{ alert.remote_port }}
+									</a>
+								</td>
+								<td>{{ alert.event }}</td>
+								<td>
+									<a href="worksheet?nodeType=socket-version&tcp={{ alert.local_ip }}:{{ alert.local_port }}:{{ alert.remote_ip }}:{{ alert.remote_port }}">lookup
+									</a>
+								</td>
+							</tr>{% endfor %}
+						</tbody>
+					</table>
+				</div>
 
-				<div class="hide" id="worksheetPage">
+				<div class="fill hide" id="worksheetPage">
 					<div class="analysisWorksheet" id="analysisWorksheet">
 						
 
