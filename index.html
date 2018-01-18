@@ -22,13 +22,18 @@
 				<div class="headerObject">CADETS/OPUS</div>
 				<div class="headerButtons">
 					<button type="button"></button>
-					<button type="button" id="machinesBtn">Machines</button>
-					<button type="button" id="notificationsBtn">Notifications</button>
-					<button type="button" id="WorksheetsBtn">Worksheets</button>
+					<button type="button" id="machinesPageBtn">Machines</button>
+					<button type="button" id="notificationsPageBtn">Notifications</button>
+					<button type="button" id="WorksheetPageBtn">Worksheets</button>
 				</div>
 			</div>
 			<div class=fillBody>
-				<div class="worksheetPage">
+				<div id="machinePage" >
+					<div id="machineGraph"></div>
+				</div>
+				<div class="hide" id="notificationPage"></div>
+
+				<div class="hide" id="worksheetPage">
 					<div class="analysisWorksheet" id="analysisWorksheet">
 						
 
@@ -79,18 +84,17 @@
 
 					</div>
 					<div class="worksheet" id="worksheet">
-						<div id="worksheetGraph"></div>
+						<div class="fill" id="worksheetGraph"></div>
 						<div class="worksheetBtns">
 							<button type="button" class="bodyButton" id="hideAnalysisWorksheet">Toggle <br>SideBar</button>
 							<input type="file" class="bodyButton" id="loadGraph"></input>
-							<!--<button type="button" class="bodyButton" id="loadGraph">loadGraph</button>-->
 							<button type="button" class="bodyButton" id="saveGraph">saveGraph</button>
 							<button type="button" class="bodyButton" id="reDagre">reDagre</button>
 							<button type="button" class="bodyButton" id="reCose-Bilkent">reCose</button>
 						</div>
 					</div>
 					<div class="inspector">
-						<div id="inspectorGraph"></div>
+						<div class="fill" id="inspectorGraph"></div>
 						<div class="fillHeader">Inspector</div>
 					</div>
 					<div class="filter">

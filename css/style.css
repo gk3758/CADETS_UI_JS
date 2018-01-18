@@ -29,6 +29,9 @@ body{
 	top: 10%;
 	left: 0%;
 }
+.hide{
+	display: none; 
+}
 .analysisWorksheet{
 	background-color: green;
 	width: 33%;
@@ -37,9 +40,7 @@ body{
 	top: 0%;
 	left: 0%;
 }
-.collapsedAnalysisWorksheet{
-	display: none; 
-}
+
 .worksheet{
 	width: 33%;
 	height: 100%;
@@ -54,26 +55,12 @@ body{
 	top: 0%;
 	left: 0%;
 }
-#worksheetGraph{
-	width: 100%;
-	height: 100%;
-	position: absolute;
-	top: 0%;
-	left: 0%;
-}
 .worksheetBtns{
 	background-color: purple;
 	width: 100%;
 	height: 10%;
 	position: absolute;
 	top: 90%;
-	left: 0%;
-}
-#inspectorGraph{
-	width: 100%;
-	height: 100%;
-	position: absolute;
-	top: 0%;
 	left: 0%;
 }
 .inspector{

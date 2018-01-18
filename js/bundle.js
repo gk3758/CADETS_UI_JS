@@ -315,10 +315,30 @@ var cy2 = cytoscape({
 });
 
 //Button logic
+
+document.getElementById("machinesPageBtn").onclick = function () {
+	$('#machinePage').css('display', 'block');
+	$('#notificationPage').css('display', 'none');
+	$('#worksheetPage').css('display', 'none');
+	return;
+};
+
+document.getElementById("notificationsPageBtn").onclick = function () {
+	$('#machinePage').css('display', 'none');
+	$('#notificationPage').css('display', 'block');
+	$('#worksheetPage').css('display', 'none');
+};
+
+document.getElementById("WorksheetPageBtn").onclick = function () {
+	$('#machinePage').css('display', 'none');
+	$('#notificationPage').css('display', 'none');
+	$('#worksheetPage').css('display', 'block');
+};
+
 document.getElementById("hideAnalysisWorksheet").onclick = function () { 
-  $('#analysisWorksheet').toggleClass('collapsedAnalysisWorksheet');
-  $('#worksheet').toggleClass('expandedWorksheet');
-  $('#worksheetGraph').toggleClass('expandedWorksheet');
+	$('#analysisWorksheet').toggleClass('hide');
+	$('#worksheet').toggleClass('expandedWorksheet');
+	$('#worksheetGraph').toggleClass('expandedWorksheet');
 };
 
 document.getElementById("loadGraph").onchange = function () {
