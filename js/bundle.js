@@ -320,7 +320,10 @@ document.getElementById("machinesPageBtn").onclick = function () {
 	$('#machinePage').css('display', 'block');
 	$('#notificationPage').css('display', 'none');
 	$('#worksheetPage').css('display', 'none');
-	return;
+
+	//TODO: turn in to function
+	$('#machineGraph').css('height', '99%');
+	$('#machineGraph').css('height', '100%');
 };
 
 document.getElementById("notificationsPageBtn").onclick = function () {
@@ -333,6 +336,12 @@ document.getElementById("WorksheetPageBtn").onclick = function () {
 	$('#machinePage').css('display', 'none');
 	$('#notificationPage').css('display', 'none');
 	$('#worksheetPage').css('display', 'block');
+	//TODO: turn in to function
+	$('#worksheetGraph').css('height', '99%');
+	$('#worksheetGraph').css('height', '100%');
+	$('#inspectorGraph').css('height', '99%');
+	$('#inspectorGraph').css('height', '100%');
+	layout( cy2, 'cose');
 };
 
 document.getElementById("hideAnalysisWorksheet").onclick = function () { 
