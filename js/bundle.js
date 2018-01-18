@@ -73,11 +73,12 @@ var testGraph = cytoscape({
 });
 
 var worksheetGraph = {
-  graph: testGraph
- };
+	graph: testGraph
+};
 
-
-var worksheetCxtMenu = {
+//worksheetGraph.graph.cxtmenu(
+var worksheetCxtMenu = 
+{
 	menuRadius: 140,
 	separatorWidth: 5,
 	selector: 'node',
@@ -149,7 +150,7 @@ var worksheetCxtMenu = {
 	]
 };
 
-worksheetGraph.graph.cxtmenu = worksheetCxtMenu;
+//worksheetGraph.graph.cxtmenu = worksheetCxtMenu;
 
 var cy = cytoscape({
 	container: document.getElementById('machineGraph'),
@@ -453,7 +454,6 @@ document.getElementById("hideAnalysisWorksheet").onclick = function () {
 
 document.getElementById("loadGraph").onchange = function () {
 	load(this.files[0], worksheetGraph);
-	worksheetGraph.graph.cxtmenu = worksheetCxtMenu;
 };
 
 document.getElementById("saveGraph").onclick = function () { 
@@ -462,7 +462,8 @@ document.getElementById("saveGraph").onclick = function () {
 
 //layout from graphing.js
 document.getElementById("reDagre").onclick = function () { 
-	layout( worksheetGraph.graph, 'cose'); //TODO: get cDagre online
+	worksheetGraph.graph.cxtmenu(worksheetCxtMenu);
+	//layout( worksheetGraph.graph, 'cose'); //TODO: get cDagre online
 };
 
 //layout from graphing.js
