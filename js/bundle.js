@@ -76,90 +76,80 @@ var worksheetGraph = {
   graph: testGraph
  };
 
-var worksheetContextMenu = {
-	menuItems: [{
-		id: 'Inspect',
-		content: 'Inspect',
-		tooltipText: 'Inspect',
-		selector: 'node',
-		onClickFunction: function (event) {
-		}},//inspect_node
-		{
-		id: 'Import neighbours',
-		content: 'ImportN',
-		tooltipText: 'ImportN',
-		selector: 'node',
-		onClickFunction: function (event) {
-		}},//import_neighbours_into_worksheet
-		{
-		id: 'Import successors',
-		content: 'ImportS',
-		tooltipText: 'ImportS',
-		selector: 'node',
-		onClickFunction: function (event) {
-		}},//successors
-		{
-		id: 'Remove',
-		content: 'Remove',
-		tooltipText: 'Remove',
-		selector: 'node',
-		onClickFunction: function (event) {
-		}},//remove_from_worksheet
-		{
-		id: 'Remove neighbours',
-		content: 'RemoveN',
-		tooltipText: 'RemoveN',
-		selector: 'node',
-		onClickFunction: function (event) {
-		}},//remove_neighbours_from_worksheet
-		{
-		id: 'Highlight',
-		content: 'Highlight',
-		tooltipText: 'Highlight',
-		selector: 'node',
-		onClickFunction: function (event) {
-		}},//toggle_node_importance
-		{
-		id: 'Commands',
-		content: 'Commands',
-		tooltipText: 'Commands',
-		selector: 'node',
-		onClickFunction: function (event) {
-			// $.getJSON(`cmds/${id}`, function(result) {
-			// 	let message = `<h2>Commands run by node ${id}:</h2>`;
-			// 	if (result.cmds.length == 0) {
-			// 		message += '<p>none</p>';
-			// 	} else {
-			// 		message += '<ul>';
-			// 		for (let command of result.cmds) {
-			// 			console.log(command);
-			// 			message += `<li><a onclick="command_clicked(${command.dbid})">${command.cmd}</a></li>`;
-		 //  			}
-		 //  			message += '</ul>';
-			// 	}
-			// 	vex.dialog.alert({ unsafeMessage: message });
-			// });
-		}},
-		{
-		id: 'Files read',
-		content: 'Files_read',
-		tooltipText: 'Files_read',
-		selector: 'node',
-		onClickFunction: function (event) {
-			// $.getJSON(`files_read/${id}`, function(result) {
-			// 	let str = '';
-			// 	Array.from(result.names).forEach(function(name) {
-			// 		str += `<li>${name}</li>`;  // XXX: requires trusted UI server!
-			// 	});
-			// 	vex.dialog.alert({
-			// 		unsafeMessage: `<h2>Files read:</h2><ul>${str}</ul>`,
-			// 	});
-			// });
-		}}
-	]
-}
 
-worksheetGraph.graph.contextMenus(worksheetContextMenu);
+var worksheetCxtMenu = {
+	menuRadius: 140,
+	separatorWidth: 5,
+	selector: 'core',
+	commands: [
+		{
+			content: 'Inspect',
+			select: function(ele){
+			}//inspect_node
+		},
+		{
+			content: 'Import neighbours',
+			select: function(ele){
+			}//import_neighbours_into_worksheet
+		},
+		{
+			content: 'Import successors',
+			select: function(ele){
+			}//import_neighbours_into_worksheet
+		},
+		{
+			content: 'Highlight',
+			select: function(ele){
+			}//toggle_node_importance
+		},
+		{
+			content: 'Files read',
+			select: function(ele){
+				// $.getJSON(`files_read/${id}`, function(result) {
+				// 	let str = '';
+				// 	Array.from(result.names).forEach(function(name) {
+				// 		str += `<li>${name}</li>`;  // XXX: requires trusted UI server!
+				// 	});
+				// 	vex.dialog.alert({
+				// 		unsafeMessage: `<h2>Files read:</h2><ul>${str}</ul>`,
+				// 	});
+				// });
+			}
+		},
+		{
+			content: 'Commands',
+			select: function(ele){
+				// $.getJSON(`cmds/${id}`, function(result) {
+				// 	let message = `<h2>Commands run by node ${id}:</h2>`;
+				// 	if (result.cmds.length == 0) {
+				// 		message += '<p>none</p>';
+				// 	} else {
+				// 		message += '<ul>';
+				// 		for (let command of result.cmds) {
+				// 			console.log(command);
+				// 			message += `<li><a onclick="command_clicked(${command.dbid})">${command.cmd}</a></li>`;
+				//   		}
+				//   		message += '</ul>';
+				// 	}
+				// 	vex.dialog.alert({ unsafeMessage: message });
+				// });
+			}
+		},
+		{
+			content: 'Remove neighbours',
+			select: function(ele){
+			}//remove_neighbours_from_worksheet
+		},
+		{
+			content: 'Remove',
+			select: function(ele){
+			}//remove_from_worksheet
+		},
+						
+	]
+};
+
+worksheetGraph.graph.cxtMenu = worksheetCxtMenu;
 
 var cy = cytoscape({
 	container: document.getElementById('machineGraph'),
@@ -399,37 +389,31 @@ var cy2 = cytoscape({
 	})
 });
 
-// cy2.contextMenus({
-// 	menuItems: [{
-// 		id: 'ImportN',
-// 		content: 'ImportN',
-// 		tooltipText: 'Import node',
-// 		selector: 'node',
-// 		onClickFunction: function (event) {
-// 		}},//import_into_worksheet
-// 		{
-// 		id: 'ImportM',
-// 		content: 'ImportM',
-// 		tooltipText: 'Import neighbours',
-// 		selector: 'node',
-// 		onClickFunction: function (event) {
-// 		}},//import_neighbours_into_worksheet
-// 		{
-// 		id: 'Inspect',
-// 		content: 'Inspect',
-// 		tooltipText: 'Inspect',
-// 		selector: 'node',
-// 		onClickFunction: function (event) {
-// 		}},//inspect_node
-// 		{
-// 		id: 'import-and-inspect',
-// 		content: 'import-and-inspect',
-// 		tooltipText: 'Import and Inspect',
-// 		selector: 'node',
-// 		onClickFunction: function (event) {
-// 		}},//inspect_and_import
-// 	]
-// });
+cy2.cxtmenu({
+	selector: 'node',
+	commands: [
+		{
+			content: 'Import node',
+			select: function(ele){
+		}//import_into_worksheet
+		},
+		{
+			content: 'Import neighbours',
+			select: function(ele){
+		}//import_neighbours_into_worksheet
+		},
+		{
+			content: 'Inspect',
+			select: function(ele){
+		}//inspect_node
+		},
+		{
+			content: 'Import and Inspect',
+			select: function(ele){
+		}//inspect_and_import
+		},
+	]
+});
 
 //Button logic
 
@@ -469,7 +453,7 @@ document.getElementById("hideAnalysisWorksheet").onclick = function () {
 
 document.getElementById("loadGraph").onchange = function () {
 	load(this.files[0], worksheetGraph);
-	worksheetGraph.graph.contextMenus(worksheetContextMenu);
+	//worksheetGraph.graph.contextMenus(worksheetContextMenu);
 };
 
 document.getElementById("saveGraph").onclick = function () { 
