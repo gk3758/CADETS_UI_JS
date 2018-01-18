@@ -7,7 +7,6 @@ var worksheetGraph = {
 	graph: testGraph
 };
 
-//worksheetGraph.graph.cxtmenu(
 var worksheetCxtMenu = 
 {
 	menuRadius: 140,
@@ -32,7 +31,8 @@ var worksheetCxtMenu =
 		{
 			content: 'Highlight',
 			select: function(ele){
-			}//toggle_node_importance
+				toggle_node_importance(ele.data("id"));
+			}
 		},
 		{
 			content: 'Files read',
@@ -70,18 +70,18 @@ var worksheetCxtMenu =
 		{
 			content: 'Remove neighbours',
 			select: function(ele){
-			}//remove_neighbours_from_worksheet
+				remove_neighbours_from_worksheet(ele.data("id"));
+			}//
 		},
 		{
 			content: 'Remove',
 			select: function(ele){
-			}//remove_from_worksheet
+				ele.remove();
+			}
 		},
 						
 	]
 };
-
-//worksheetGraph.graph.cxtmenu = worksheetCxtMenu;
 
 var cy = cytoscape({
 	container: document.getElementById('machineGraph'),
@@ -347,34 +347,65 @@ cy2.cxtmenu({
 	]
 });
 
+//Methods
+
+function remove_neighbours_from_worksheet(id) {
+  let node = worksheetGraph.graph.$id(id);
+
+  // First check to see if this is a compound node.
+  let children = node.children();
+  if (!children.empty()) {
+    children.forEach(function (node) { worksheetGraph.graph.remove(node); });
+    node.remove();
+    return;
+  }
+
+  // Otherwise, remove edge-connected neighbours that aren't highlighted.
+  node.connectedEdges().connectedNodes().filter(function(ele) {
+    return !ele.hasClass('important');
+  }).remove();
+}
+
+function toggle_node_importance(id) {//TODO: add important class
+  nodes = worksheetGraph.graph.nodes(`node#${id}`);
+  nodes.forEach( function(ele){
+      if (ele.hasClass('important')) {
+        ele.removeClass('important');
+      } else {
+        ele.addClass('important');
+      }
+  });
+}
+
+function openPage(pageId){
+	$('#machinePage').css('display', 'none');
+	$('#notificationPage').css('display', 'none');
+	$('#worksheetPage').css('display', 'none');
+	$(pageId).css('display', 'block');
+}
+
+function refeashGraph(graphId){
+	$(graphId).css('height', '99%');
+	$(graphId).css('height', '100%');
+}
+
+//Methods end
+
 //Button logic
 
 document.getElementById("machinesPageBtn").onclick = function () {
-	$('#machinePage').css('display', 'block');
-	$('#notificationPage').css('display', 'none');
-	$('#worksheetPage').css('display', 'none');
-
-	//TODO: turn in to function
-	$('#machineGraph').css('height', '99%');
-	$('#machineGraph').css('height', '100%');
+	openPage('#machinePage');
+	refeashGraph('#machineGraph');
 };
 
 document.getElementById("notificationsPageBtn").onclick = function () {
-	$('#machinePage').css('display', 'none');
-	$('#notificationPage').css('display', 'block');
-	$('#worksheetPage').css('display', 'none');
+	openPage('#notificationPage');
 };
 
 document.getElementById("WorksheetPageBtn").onclick = function () {
-	$('#machinePage').css('display', 'none');
-	$('#notificationPage').css('display', 'none');
-	$('#worksheetPage').css('display', 'block');
-	//TODO: turn in to function
-	$('#worksheetGraph').css('height', '99%');
-	$('#worksheetGraph').css('height', '100%');
-	$('#inspectorGraph').css('height', '99%');
-	$('#inspectorGraph').css('height', '100%');
-	layout( cy2, 'cose');
+	openPage('#worksheetPage');
+	refeashGraph('#worksheetGraph');
+	refeashGraph('#inspectorGraph');
 };
 
 document.getElementById("hideAnalysisWorksheet").onclick = function () { 
@@ -401,3 +432,5 @@ document.getElementById("reDagre").onclick = function () {
 document.getElementById("reCose-Bilkent").onclick = function () { 
 	layout( worksheetGraph.graph, 'cose'); //TODO: get cose-bilkent online
 };
+
+//Button logic ends

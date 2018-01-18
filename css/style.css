@@ -11,7 +11,7 @@ body{
 .fillHeader{
 	background-color: black;
 	width: 100%;
-	height: 10%;
+	height: 7%;
 	position: absolute;
 	top: 0%;
 	left: 0%;
@@ -20,13 +20,13 @@ body{
 	height: 100%;
 	position: absolute;
 	top: 0%;
-	left: 25%;
+	left: 20%;
 }
 .fillBody{
 	width: 100%;
-	height: 90%;
+	height: 93%;
 	position: absolute;
-	top: 10%;
+	top: 7%;
 	left: 0%;
 }
 .hide{
@@ -34,26 +34,28 @@ body{
 }
 .analysisWorksheet{
 	background-color: green;
-	width: 33%;
-	height: 100%;
+	width: 31%;
+	height: 96%;
 	position: absolute;
-	top: 0%;
-	left: 0%;
+	top: 2%;
+	left: 1%;
 }
 
 .worksheet{
+	background-color: blue;
 	width: 33%;
-	height: 100%;
+	height: 96%;
 	position: absolute;
-	top: 0%;
+	top: 2%;
 	left: 33%;
 }
 .expandedWorksheet{
-	width: 66%;
-	height: 100%;
+	background-color: blue;
+	width: 64%;
+	height: 94%;
 	position: absolute;
-	top: 0%;
-	left: 0%;
+	top: 2%;
+	left: 1%;
 }
 .worksheetBtns{
 	background-color: purple;
@@ -65,17 +67,17 @@ body{
 }
 .inspector{
 	background-color: yellow;
-	width: 34%;
-	height: 90%;
+	width: 32%;
+	height: 96%;
 	position: absolute;
-	top: 0%;
-	left: 66%;
+	top: 2%;
+	left: 67%;
 }
 .filter{
 	background-color: red;
-	width: 34%;
-	height: 10%;
+	width: 100%;
+	height: 8%;
 	position: absolute;
-	top: 90%;
-	left: 66%;
+	top: 92%;
+	left: 0%;
 }

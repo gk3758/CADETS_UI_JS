@@ -17,39 +17,39 @@ let worksheet_context_items = {
     name: "Inspect",
     icon: "fa-search",
     accesskey: "s",
-    action: inspect_node,
+    //action: inspect_node,
   },
   "add-neighbours": {
     name: "Import neighbours",
     icon: "fa-plus",
     accesskey: "n",
-    action: import_neighbours_into_worksheet,
+    //action: import_neighbours_into_worksheet,
   },
   "expand_forward": {
       name: "Import successors",
       icon: "fa-plus-circle",
       accesskey: "s",
-      action: successors,
+      //action: successors,
   },
   "add-remove-sep": "---",
   "remove": {
     name: "Remove",
     icon: "fa-times",
     accesskey: "r",
-    action: remove_from_worksheet,
+    //action: remove_from_worksheet,
   },
   "remove_neighbours": {
     name: "Remove neighbours",
     icon: "fa-times",
     accesskey: "v",
-    action: remove_neighbours_from_worksheet,
+    //action: remove_neighbours_from_worksheet,
   },
   "remove-mark-sep": "---",
   "mark": {
     name: "Highlight",
     icon: "fa-thumb-tack",
     accesskey: "h",
-    action: toggle_node_importance,
+    //action: toggle_node_importance,
   },
   "mark-other-sep": "---",
   "commands": {
@@ -356,49 +356,49 @@ function successors(id) {
 };
 
 
-function toggle_node_importance(id) {
-  nodes = worksheet.graph.nodes(`node#${id}`);
-  nodes.forEach( function(ele){
-      if (ele.hasClass('important')) {
-        ele.removeClass('important');
-      } else {
-        ele.addClass('important');
-      }
-  });
-}
+// function toggle_node_importance(id) {
+//   nodes = worksheet.graph.nodes(`node#${id}`);
+//   nodes.forEach( function(ele){
+//       if (ele.hasClass('important')) {
+//         ele.removeClass('important');
+//       } else {
+//         ele.addClass('important');
+//       }
+//   });
+// }
 
-function toggle_sidebar() {
-  $('#analysisWorksheet').toggleClass('collapsedAnalysisWorksheet');
-  $('#worksheet').toggleClass('expandedWorksheet');
-  $('#worksheetGraph').toggleClass('expandedWorksheet');
-  // $('#sidebar').toggleClass('collapsed');
-  // $('#content').toggleClass('col-sm-6 col-sm-12')
-  //              .toggleClass('col-md-8 col-md-12')
-  //              .toggleClass('col-lg-9 col-lg-9');
-  // $("#inspector-graph").width($('#inspector').width());
-  // $("#worksheet").hide().show();
-}
+// function toggle_sidebar() {
+//   $('#analysisWorksheet').toggleClass('collapsedAnalysisWorksheet');
+//   $('#worksheet').toggleClass('expandedWorksheet');
+//   $('#worksheetGraph').toggleClass('expandedWorksheet');
+//   // $('#sidebar').toggleClass('collapsed');
+//   // $('#content').toggleClass('col-sm-6 col-sm-12')
+//   //              .toggleClass('col-md-8 col-md-12')
+//   //              .toggleClass('col-lg-9 col-lg-9');
+//   // $("#inspector-graph").width($('#inspector').width());
+//   // $("#worksheet").hide().show();
+// }
 
-function remove_from_worksheet(id) {
-  worksheet.graph.remove(`node#${id}`);
-}
+// function remove_from_worksheet(id) {
+//   worksheet.graph.remove(`node#${id}`);
+// }
 
-function remove_neighbours_from_worksheet(id) {
-  let node = worksheet.graph.$id(id);
+// function remove_neighbours_from_worksheet(id) {
+//   let node = worksheet.graph.$id(id);
 
-  // First check to see if this is a compound node.
-  let children = node.children();
-  if (!children.empty()) {
-    children.forEach(function (node) { worksheet.graph.remove(node); });
-    node.remove();
-    return;
-  }
+//   // First check to see if this is a compound node.
+//   let children = node.children();
+//   if (!children.empty()) {
+//     children.forEach(function (node) { worksheet.graph.remove(node); });
+//     node.remove();
+//     return;
+//   }
 
-  // Otherwise, remove edge-connected neighbours that aren't highlighted.
-  node.connectedEdges().connectedNodes().filter(function(ele) {
-    return !ele.hasClass('important');
-  }).remove();
-}
+//   // Otherwise, remove edge-connected neighbours that aren't highlighted.
+//   node.connectedEdges().connectedNodes().filter(function(ele) {
+//     return !ele.hasClass('important');
+//   }).remove();
+// }
 
 
 //
