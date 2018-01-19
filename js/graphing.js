@@ -108,7 +108,7 @@ function load(file, graphContainer) {
 // Unfortunately this is hard to do statically.
 //
 function load_graph_style(graphs) {
-  $.ajax('static/style/cytoscape.css', {
+  $.ajax('css/cytoscape.css', {
     dataType: 'text',
     mimeType: 'text/css',
     success: function(result) {
@@ -138,42 +138,42 @@ function layout(graph, algorithm) {
 // within a DOM element with non-static positioning (i.e., relative, fixed or
 // absolute positioning).
 //
-function attach_context_menu(graph, selector, items) {
-  $.contextMenu({
-    selector: selector,
-    trigger: 'none',
-    items: items,
-    callback: function(action, options) {
-      let node = graph.contextMenuNode.data();
+// function attach_context_menu(graph, selector, items) {
+//   $.contextMenu({
+//     selector: selector,
+//     trigger: 'none',
+//     items: items,
+//     callback: function(action, options) {
+//       let node = graph.contextMenuNode.data();
 
-      for (let key in items) {
-        if (action == key) {
-          items[key].action(node.id);
-        }
-      }
+//       for (let key in items) {
+//         if (action == key) {
+//           items[key].action(node.id);
+//         }
+//       }
 
-      graph.contextMenuNode.unselect();
-      graph.contextMenuNode = null;
-    }
-  });
+//       graph.contextMenuNode.unselect();
+//       graph.contextMenuNode = null;
+//     }
+//   });
 
-  graph.$('node').on('tap', function(ev) {
-    if (ev.target != this) {
-      return;
-    }
+//   graph.$('node').on('tap', function(ev) {
+//     if (ev.target != this) {
+//       return;
+//     }
 
-    // The node currently showing a context menu. These menus are madal and
-    // therefore provide implicit synchronization.
-    graph.contextMenuNode = this;
+//     // The node currently showing a context menu. These menus are madal and
+//     // therefore provide implicit synchronization.
+//     graph.contextMenuNode = this;
 
-    let pos = ev.renderedPosition;
-    let offset = $(selector).offset();
-    pos.x += offset.left;
-    pos.y += offset.top;
+//     let pos = ev.renderedPosition;
+//     let offset = $(selector).offset();
+//     pos.x += offset.left;
+//     pos.y += offset.top;
 
-    $(selector).contextMenu(pos);
-  });
-}
+//     $(selector).contextMenu(pos);
+//   });
+// }
 
 //
 // Extract graphical metadata about a graph node (icon and label) that isn't
