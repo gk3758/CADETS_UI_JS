@@ -81,6 +81,20 @@ th,td{
 	top: 2%;
 	left: 1%;
 }
+.analysisHeader{
+	width: 100%;
+	height: 33%;
+	position: absolute;
+	top: 0%;
+	left: 0%;
+}
+.analysisBody{
+	width: 100%;
+	height: 63%;
+	position: absolute;
+	top: 36%;
+	left: 0%;
+}
 
 .worksheet{
     box-shadow: 0 8px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);

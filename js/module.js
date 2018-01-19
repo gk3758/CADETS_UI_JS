@@ -1,7 +1,7 @@
 var neo4j = window.neo4j.v1;
 var driver = neo4j.driver("bolt://localhost", neo4j.auth.basic("neo4j", "abcde"));
 
-function searchMovies(queryString) {//.then(movies => {
+function searchMovies(queryString) {
   var session = driver.session();
   return session
 	.run(
@@ -44,7 +44,7 @@ var worksheetCxtMenu =
 		{
 			content: 'Import successors',
 			select: function(ele){
-			}//import_neighbours_into_worksheet
+			}//successors
 		},
 		{
 			content: 'Highlight',
@@ -365,7 +365,7 @@ inspectorGraph.cxtmenu({
 		{
 			content: 'Inspect',
 			select: function(ele){
-				console.log("Inspect");
+				console.log(ele);
 				inspect_node(ele.data("id"));
 		}//inspect_node
 		},
@@ -750,8 +750,8 @@ document.getElementById("saveGraph").onclick = function () {
 
 //layout from graphing.js
 document.getElementById("reDagre").onclick = function () { 
-	searchMovies("Matrix").then(movies => {console.log(movies)});
-	//worksheetGraph.graph.cxtmenu(worksheetCxtMenu);
+	//searchMovies("Matrix").then(movies => {console.log(movies)});
+	worksheetGraph.graph.cxtmenu(worksheetCxtMenu);
 	//layout( worksheetGraph.graph, 'cose'); //TODO: get cDagre online
 };
 
