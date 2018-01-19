@@ -466,7 +466,7 @@ function toggle_node_importance(id) {//TODO: add important class
   });
 }
 
-
+//TODO: replace ajax with js diver
 /*********************************************************************************/
 
 
