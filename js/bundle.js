@@ -71,17 +71,17 @@ var neo4j = window.neo4j.v1;
 var driver = neo4j.driver("bolt://localhost", neo4j.auth.basic("neo4j", "abcde"));
 
 function searchMovies(queryString) {
-  var session = driver.session();
-  return session
-	.run(
-	  'MATCH (movie:Movie) \
-	  WHERE movie.title =~ {title} \
-	  RETURN movie',
-	  {title: '(?i).*' + queryString + '.*'}
+	var session = driver.session();
+	return session
+		.run(
+			'MATCH (movie:Movie) \
+			WHERE movie.title =~ {title} \
+			RETURN movie',
+		{title: '(?i).*' + queryString + '.*'}
 	)
 	.then(result => {
-	  session.close();
-	  return result;});
+		session.close();
+		return result;});
 }
 
 
@@ -411,9 +411,9 @@ var inspectorGraph = cytoscape({
 
 
 var inspector = {
-  detail: $('#inspector-detail'),
-  neighbours: $('#neighbour-detail'),
-  graph: inspectorGraph,
+	detail: $('#inspector-detail'),
+	neighbours: $('#neighbour-detail'),
+	graph: inspectorGraph,
 };
 inspector.graph.inspectee = null;
 
@@ -448,34 +448,34 @@ inspectorGraph.cxtmenu({
 
 layout( inspectorGraph, 'cose');
 
-//functions
+//Functions
 
 function remove_neighbours_from_worksheet(id) {
-  let node = worksheetGraph.graph.$id(id);
+	let node = worksheetGraph.graph.$id(id);
 
-  // First check to see if this is a compound node.
-  let children = node.children();
-  if (!children.empty()) {
-	children.forEach(function (node) { worksheetGraph.graph.remove(node); });
-	node.remove();
-	return;
-  }
+	// First check to see if this is a compound node.
+	let children = node.children();
+	if (!children.empty()) {
+		children.forEach(function (node) { worksheetGraph.graph.remove(node); });
+		node.remove();
+		return;
+	}
 
-  // Otherwise, remove edge-connected neighbours that aren't highlighted.
-  node.connectedEdges().connectedNodes().filter(function(ele) {
+	// Otherwise, remove edge-connected neighbours that aren't highlighted.
+	node.connectedEdges().connectedNodes().filter(function(ele) {
 	return !ele.hasClass('important');
-  }).remove();
+	}).remove();
 }
 
 function toggle_node_importance(id) {//TODO: add important class
-  nodes = worksheetGraph.graph.nodes(`node#${id}`);
-  nodes.forEach( function(ele){
-	  if (ele.hasClass('important')) {
-		ele.removeClass('important');
-	  } else {
-		ele.addClass('important');
-	  }
-  });
+	nodes = worksheetGraph.graph.nodes(`node#${id}`);
+	nodes.forEach( function(ele){
+		if (ele.hasClass('important')) {
+			ele.removeClass('important');
+		} else {
+			ele.addClass('important');
+		}
+	});
 }
 
 //TODO: replace ajax with js
@@ -784,7 +784,7 @@ function refeashGraph(graphId){
 	$(graphId).css('height', '100%');
 }
 
-//functions end
+//Functions end
 
 //Button logic
 
