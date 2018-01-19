@@ -4,5 +4,6 @@ This is a prototype for the implementation of the CADETS/OPUS UI implemented wit
 
 npm install jquery
 npm install cytoscape
-npm install cytoscape-context-menus
+npm install npm install cytoscape-cxtmenu
 npm install vex-js
+npm install neo4j-driver

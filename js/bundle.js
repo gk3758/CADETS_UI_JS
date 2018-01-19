@@ -416,6 +416,8 @@ cy2.cxtmenu({
 	]
 });
 
+layout( cy2, 'cose');
+
 //Methods
 
 function remove_neighbours_from_worksheet(id) {
