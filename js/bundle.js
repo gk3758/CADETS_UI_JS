@@ -289,7 +289,8 @@ var cy = cytoscape({
 	})
 });
 
-var cy2 = cytoscape({
+
+var inspectorGraph = cytoscape({
 	container: document.getElementById('inspectorGraph'),
 	elements: [
 	{ data: { id: 'EN-1020', name: 'Introduction to Programming' } },
@@ -408,7 +409,16 @@ var cy2 = cytoscape({
 	})
 });
 
-cy2.cxtmenu({
+
+var inspector = {
+  detail: $('#inspector-detail'),
+  neighbours: $('#neighbour-detail'),
+  graph: inspectorGraph,
+};
+inspector.graph.inspectee = null;
+
+
+inspectorGraph.cxtmenu({
 	selector: 'node',
 	commands: [
 		{
@@ -424,6 +434,8 @@ cy2.cxtmenu({
 		{
 			content: 'Inspect',
 			select: function(ele){
+				console.log("Inspect");
+				inspect_node(ele.data("id"));
 		}//inspect_node
 		},
 		{
@@ -434,7 +446,7 @@ cy2.cxtmenu({
 	]
 });
 
-layout( cy2, 'cose');
+layout( inspectorGraph, 'cose');
 
 //functions
 
@@ -466,7 +478,7 @@ function toggle_node_importance(id) {//TODO: add important class
   });
 }
 
-//TODO: replace ajax with js diver
+//TODO: replace ajax with js
 /*********************************************************************************/
 
 

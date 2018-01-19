@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 	<head>
 		<title>CADETS/OPUD_GUI</title>
 		
@@ -16,8 +17,10 @@
 
 		<script src="js/graphing.js"></script>
 	</head>
+
 	<body>
 		<div class="fill">
+
 			<div class="fillHeader">
 				<font class="headerObject" size="+3">CADETS/OPUS</font>
 				<div class="headerButtons">
@@ -27,11 +30,14 @@
 					<button type="button" class="headerButton" id="WorksheetPageBtn">Worksheets</button>
 				</div>
 			</div>
+
 			<div class=fillBody>
 
 				<div class="fill" id="machinePage" >
+
 					<div class="machineGraph" id="machineGraph"></div>
 				</div>
+
 				<div class="fill hide" id="notificationPage">
 					<table class="notificationTable">
 						<thead>
@@ -41,7 +47,7 @@
 								<th>Remote</th>
 								<th>Event</th>
 								<th></th>
-					 		</tr>
+							</tr>
 						</thead>
 						<tbody>
 							<tr>
@@ -65,9 +71,9 @@
 				</div>
 
 				<div class="fill hide" id="worksheetPage">
+
 					<div class="analysisWorksheet" id="analysisWorksheet">
 						
-
 						<div class="panel panel-info">
 							<div class="panel-heading">Available nodes:
 								<form id="nodeFilters" class="form-horizontal well" method="get">
@@ -111,9 +117,8 @@
 								</table>
 							</div>
 						</div>
-
-
 					</div>
+
 					<div class="worksheet" id="worksheet">
 						<div class="fill" id="worksheetGraph"></div>
 						<div class="worksheetBtns">
@@ -124,17 +129,31 @@
 							<button type="button" class="bodyButton" id="reCose-Bilkent">reCose</button>
 						</div>
 					</div>
-					<div class="inspector">
+
+					<div class="inspector scrollable">
 						<div class="fill" id="inspectorGraph"></div>
-						<font class="inspectorTitlebox" size="+3">Inspector</font>
+						<font class="panel-heading" size="+3">Inspector</font>
 						<div class="filter">
 							<input type="checkbox" name="filess" value="showFiles">Files</input>
 							<input type="checkbox" name="sockets" value="showSockets">Sockets</input>
 							<input type="checkbox" name="pipes" value="showPipes">Pipes</input>
 							<input type="checkbox" name="processMetaData" value="showProcessMetaData">ProcessMetaData</input>
 						</div>
+						<div class="inspectorT1">
+							<font class="panel-heading">Details</font>
+							<div class="panel-body scrollable">
+								<table id="inspector-detail" class="table table-striped"></table>
+							</div>
+						</div>
+						<div class="inspectorT2">
+							<font class="panel-heading">Neighbours</font>
+							<div class="panel-body scrollable">
+								<table id="neighbour-detail" class="table table-striped"></table>
+							</div>
+						</div>
 					</div>
 				</div>
+
 			</div>
 		</div>
 		<script src='js/bundle.js'></script>
