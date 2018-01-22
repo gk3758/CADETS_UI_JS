@@ -3,11 +3,11 @@ var driver = neo4j.driver("bolt://localhost", neo4j.auth.basic("neo4j", "abcde")
 
 function searchMovies(queryString) {
 	var session = driver.session();
-	return session
+	return session//Top Gun
 		.run(
-			'MATCH (movie:Movie) \
+			'MATCH (movie:Movie)<-[:ACTED_IN | :WROTE]-(actor:Person) \
 			WHERE movie.title =~ {title} \
-			RETURN movie',
+			RETURN actor',
 		{title: '(?i).*' + queryString + '.*'}
 	)
 	.then(result => {
@@ -32,19 +32,22 @@ var worksheetCxtMenu =
 	selector: 'node',
 	commands: [
 		{
-			content: 'Inspect',
+			content: 'Inspect',//TODO: get it working
 			select: function(ele){
-			}//inspect_node
+				inspect_node(ele.data('id'));
+			}
 		},
 		{
-			content: 'Import neighbours',
+			content: 'Import neighbours',//TODO: get it working
 			select: function(ele){
-			}//import_neighbours_into_worksheet
+			import_neighbours_into_worksheet(ele.data('id'));
+			}
 		},
 		{
-			content: 'Import successors',
+			content: 'Import successors',//TODO: get it working
 			select: function(ele){
-			}//successors
+			successors(ele.data('id'));
+			}
 		},
 		{
 			content: 'Highlight',
@@ -53,43 +56,45 @@ var worksheetCxtMenu =
 			}
 		},
 		{
-			content: 'Files read',
+			content: 'Files read',//TODO: get it working
 			select: function(ele){
-				// $.getJSON(`files_read/${id}`, function(result) {
-				// 	let str = '';
-				// 	Array.from(result.names).forEach(function(name) {
-				// 		str += `<li>${name}</li>`;  // XXX: requires trusted UI server!
-				// 	});
-				// 	vex.dialog.alert({
-				// 		unsafeMessage: `<h2>Files read:</h2><ul>${str}</ul>`,
-				// 	});
-				// });
+				var id = ele.data('id');
+				$.getJSON(`files_read/${id}`, function(result) {
+					let str = '';
+					Array.from(result.names).forEach(function(name) {
+						str += `<li>${name}</li>`;  // XXX: requires trusted UI server!
+					});
+					vex.dialog.alert({
+						unsafeMessage: `<h2>Files read:</h2><ul>${str}</ul>`,
+					});
+				});
 			}
 		},
 		{
-			content: 'Commands',
+			content: 'Commands',//TODO: get it working
 			select: function(ele){
-				// $.getJSON(`cmds/${id}`, function(result) {
-				// 	let message = `<h2>Commands run by node ${id}:</h2>`;
-				// 	if (result.cmds.length == 0) {
-				// 		message += '<p>none</p>';
-				// 	} else {
-				// 		message += '<ul>';
-				// 		for (let command of result.cmds) {
-				// 			console.log(command);
-				// 			message += `<li><a onclick="command_clicked(${command.dbid})">${command.cmd}</a></li>`;
-				//   		}
-				//   		message += '</ul>';
-				// 	}
-				// 	vex.dialog.alert({ unsafeMessage: message });
-				// });
+				var id = ele.data('id');
+				$.getJSON(`cmds/${id}`, function(result) {
+					let message = `<h2>Commands run by node ${id}:</h2>`;
+					if (result.cmds.length == 0) {
+						message += '<p>none</p>';
+					} else {
+						message += '<ul>';
+						for (let command of result.cmds) {
+							console.log(command);
+							message += `<li><a onclick="command_clicked(${command.dbid})">${command.cmd}</a></li>`;
+				  		}
+				  		message += '</ul>';
+					}
+					vex.dialog.alert({ unsafeMessage: message });
+				});
 			}
 		},
 		{
 			content: 'Remove neighbours',
 			select: function(ele){
 				remove_neighbours_from_worksheet(ele.data("id"));
-			}//
+			}
 		},
 		{
 			content: 'Remove',
@@ -219,6 +224,8 @@ var cy = cytoscape({
 		'width': 1
 	})
 });
+
+layout( cy, 'cose');
 
 
 var inspectorGraph = cytoscape({
@@ -353,26 +360,30 @@ inspectorGraph.cxtmenu({
 	selector: 'node',
 	commands: [
 		{
-			content: 'Import node',
+			content: 'Import node',//TODO: get it working
 			select: function(ele){
-		}//import_into_worksheet
+				console.log(ele.data('id'));
+				import_into_worksheet(ele.data('id'));		
+		}
 		},
 		{
-			content: 'Import neighbours',
+			content: 'Import neighbours',//TODO: get it working
 			select: function(ele){
-		}//import_neighbours_into_worksheet
+				import_neighbours_into_worksheet(ele.data('id'));
+		}
 		},
 		{
-			content: 'Inspect',
+			content: 'Inspect',//TODO: get it working
 			select: function(ele){
 				console.log(ele);
 				inspect_node(ele.data("id"));
-		}//inspect_node
+		}
 		},
 		{
-			content: 'Import and Inspect',
+			content: 'Import and Inspect',//TODO: get it working
 			select: function(ele){
-		}//inspect_and_import
+				inspect_and_import(ele.data('id'));
+		}
 		},
 	]
 });
@@ -409,7 +420,7 @@ function toggle_node_importance(id) {//TODO: add important class
 	});
 }
 
-//TODO: replace ajax with js
+//TODO: replace update with js diver
 /*********************************************************************************/
 
 
@@ -483,7 +494,7 @@ function get_successors(id, fn, err = console.log) {
 // How to import a node into the worksheet
 //
 function import_into_worksheet(id, err = console.log) {
-	let graph = worksheet.graph;
+	let graph = worksheetGraph.graph;
 
 	// Have we already imported this node?
 	if (!graph.getElementById(id).empty()) {
@@ -620,7 +631,7 @@ function inspect_node(id, err = console.log) {
 // Define what it means to show "successors" to a node.
 //
 function successors(id) {
-	let graph = worksheet.graph;
+	let graph = worksheetGraph.graph;
 
 	// Display the node's details in the inspector "Details" panel.
 	get_successors(id, function(result) {
@@ -710,7 +721,7 @@ function openPage(pageId){
 	$(pageId).css('display', 'block');
 }
 
-function refeashGraph(graphId){
+function refreshGraph(graphId){
 	$(graphId).css('height', '99%');
 	$(graphId).css('height', '100%');
 }
@@ -721,7 +732,7 @@ function refeashGraph(graphId){
 
 document.getElementById("machinesPageBtn").onclick = function () {
 	openPage('#machinePage');
-	refeashGraph('#machineGraph');
+	refreshGraph('#machineGraph');
 };
 
 document.getElementById("notificationsPageBtn").onclick = function () {
@@ -730,14 +741,14 @@ document.getElementById("notificationsPageBtn").onclick = function () {
 
 document.getElementById("WorksheetPageBtn").onclick = function () {
 	openPage('#worksheetPage');
-	refeashGraph('#worksheetGraph');
-	refeashGraph('#inspectorGraph');
+	refreshGraph('#worksheetGraph');
+	refreshGraph('#inspectorGraph');
 };
 
 document.getElementById("hideAnalysisWorksheet").onclick = function () { 
 	$('#analysisWorksheet').toggleClass('hide');
 	$('#worksheet').toggleClass('expandedWorksheet');
-	$('#worksheetGraph').toggleClass('expandedWorksheet');
+	//$('#worksheetGraph').toggleClass('expandedWorksheet');
 };
 
 document.getElementById("loadGraph").onchange = function () {
@@ -750,8 +761,8 @@ document.getElementById("saveGraph").onclick = function () {
 
 //layout from graphing.js
 document.getElementById("reDagre").onclick = function () { 
-	//searchMovies("Matrix").then(movies => {console.log(movies)});
-	worksheetGraph.graph.cxtmenu(worksheetCxtMenu);
+	searchMovies("Top Gun").then(movies => {console.log(movies)});
+	//worksheetGraph.graph.cxtmenu(worksheetCxtMenu);
 	//layout( worksheetGraph.graph, 'cose'); //TODO: get cDagre online
 };
 
