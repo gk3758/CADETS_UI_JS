@@ -22,7 +22,7 @@
 		<div class="fill">
 
 			<div class="fillHeader">
-				<font class="headerObject" size="+3">CADETS/OPUS</font>
+				<font class="headerObject" size="+3.5">&nbsp;CADETS/OPUS</font>
 				<div class="headerButtons">
 					<button type="button"></button>
 					<button type="button" class="headerButton" id="machinesPageBtn">Machines</button>
@@ -65,7 +65,7 @@
 									<a href="worksheet?nodeType=socket-version&tcp={{ alert.local_ip }}:{{ alert.local_port }}:{{ alert.remote_ip }}:{{ alert.remote_port }}">lookup
 									</a>
 								</td>
-							</tr>{% endfor %}
+							</tr>
 						</tbody>
 					</table>
 				</div>
@@ -76,9 +76,9 @@
 						<div id="analysisSearch">
 							<font class="analysisHeader" style="color: white">&nbsp;Available nodes:</font>
 							<div class="formBox">
-								<label for="filterNodeType" class="col-md-2 control-label">Type</label>
-								<div class="col-md-10">
-									<select id="filterNodeType" class="form-control">
+								<label for="filterNodeType">&nbsp;Type</label>
+								<div>
+									&nbsp;<select id="filterNodeType">
 										<option></option>
 										<option>connection</option>
 										<option>file-version</option>
@@ -89,27 +89,27 @@
 										<option>machine</option>
 									</select>
 								</div>
-								<label for="filterName" class="col-md-2 control-label">Name</label>
+								<label for="filterName">&nbsp;Name</label>
 								<div class="col-md-10">
-								<input id="filterName" class="form-control"/>
+									&nbsp;<input id="filterName"/>
 								</div>
-								<label for="filterHost" class="col-md-2 control-label">Host</label>
-								<div class="col-md-10">
-									<input id="filterHost" class="form-control"/>
+								<label for="filterHost">&nbsp;Host</label>
+								<div>
+									&nbsp;<input id="filterHost"/>
 								</div>
-								<label for="filterTuple" class="col-md-2 control-label">TCP</label>
-								<div id="filterTuple" class="col-md-10">
-									<input id="filterLocalIp" size="10"/>
-									<input id="filterLocalPort" size="3"/>L<br/>
-									<input id="filterRemoteIp" size="10"/>
-									<input id="filterRemotePort" size="3"/>R
+								<label for="filterTuple">&nbsp;TCP</label>
+								<div id="filterTuple">
+									&nbsp;<input id="filterLocalIp" size="10"/>
+									<input id="filterLocalPort" size="3"/>&nbsp;L<br/>
+									&nbsp;<input id="filterRemoteIp" size="10"/>
+									<input id="filterRemotePort" size="3"/>&nbsp;R
 								</div>
 							</div>
 						</div>
 						<div class="analysisBody scrollable">
-							<table class="table table-hover">
+							<table>
 								<tbody id="nodelist"></tbody>
-						</table>
+							</table>
 						</div>
 					</div>
 
@@ -129,10 +129,10 @@
 						<div class="fill" id="inspectorGraph"></div>
 						<div class="panel-heading" size="+3">&nbsp;Inspector</div>
 						<div class="filter">
-							<input type="checkbox" class="checkbox" id="inspectFiles">Files</input>
-							<input type="checkbox" class="checkbox" id="inspectSockets">Sockets</input>
-							<input type="checkbox" class="checkbox" id="inspectPipes">Pipes</input>
-							<input type="checkbox" class="checkbox" id="inspectProcessMeta">ProcessMetaData</input>
+							<input type="checkbox" class="roundedOne" id="inspectFiles">Files</input>
+							<input type="checkbox" class="roundedOne" id="inspectSockets">Sockets</input>
+							<input type="checkbox" class="roundedOne" id="inspectPipes">Pipes</input>
+							<input type="checkbox" class="roundedOne" id="inspectProcessMeta">ProcessMetaData</input>
 						</div>
 						<div class="inspectorT1">
 							<div class="panel-heading">&nbsp;Details</div>
@@ -148,7 +148,6 @@
 						</div>
 					</div>
 				</div>
-
 			</div>
 		</div>
 		<script src='js/bundle.js'></script>

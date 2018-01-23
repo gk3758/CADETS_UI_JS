@@ -6,8 +6,8 @@
 	left: 0%;
 }
 .scrollable{
-    overflow: scroll;
-    overflow-x: hidden;
+	overflow: scroll;
+	overflow-x: hidden;
 }
 .fillHeader{
 	color: white;
@@ -26,12 +26,19 @@
 }
 
 .headerButton{
+	transition-duration: 0.5s;
 	font-size: 20px;
 	background-color: black;
 	color: white;
-	border: none;
+	border: black;
+	outline:none;
 }
-
+.headerButton:Hover{
+	font-size: 20px;
+	background-color: white;
+	color: black;
+	border: white;
+}
 .fillBody{
 	background-color: #eee;
 	width: 100%;
@@ -42,18 +49,18 @@
 }
 
 .machineGraph{
-    box-shadow: 0 8px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+	box-shadow: 0 8px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
 	background-color: white;
-	width: 88%;
-	height: 88%;
+	width: 90%;
+	height: 90%;
 	position: absolute;
-	top: 6%;
-	left: 6%;
+	top: 5%;
+	left: 5%;
 }
 .notificationTable{
-    border: 1px solid black;
-    border-collapse: collapse;
-    box-shadow: 0 8px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+	border: 1px solid black;
+	border-collapse: collapse;
+	box-shadow: 0 8px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
 	background-color: white;
 	color: black;
 	width: 88%;
@@ -62,8 +69,8 @@
 	left: 6%;
 }
 .notificationTable, th, td {
-    border: 1px solid black;
-    border-collapse: collapse;
+	border: 1px solid black;
+	border-collapse: collapse;
 }
 th,td{
 	padding: 15px;
@@ -72,7 +79,7 @@ th,td{
 	display: none; 
 }
 .analysisWorksheet{
-    box-shadow: 0 8px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+	box-shadow: 0 8px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
 	background-color: white;
 	width: 31%;
 	height: 96%;
@@ -89,7 +96,6 @@ th,td{
 	left: 0%;
 }
 .formBox{
-    box-shadow: 0 8px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
 	background-color: white;
 	color: black;
 	width: 96%;
@@ -107,7 +113,7 @@ th,td{
 }
 
 .worksheet{
-    box-shadow: 0 8px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+	box-shadow: 0 8px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
 	background-color: white;
 	width: 33%;
 	height: 96%;
@@ -116,7 +122,7 @@ th,td{
 	left: 33%;
 }
 .expandedWorksheet{
-    box-shadow: 0 8px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+	box-shadow: 0 8px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
 	background-color: white;
 	width: 65%;
 	height: 96%;
@@ -132,14 +138,24 @@ th,td{
 	left: 3%;
 }
 .bodyButton{
-    box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.2), 0 1.5px 5px 0 rgba(0, 0, 0, 0.19);
+	box-shadow: 0 4px #999;
 	background-color: #eee;
 	color: black;
 	border: none;
 	height: 55%;
+	border-radius: 15px;
+	outline:none;
+}
+.bodyButton:Hover{
+	background-color: #dfdfdf;
+}
+.bodyButton:active {
+	background-color: #ddd;
+	box-shadow: 0 2px #666;
+	transform: translateY(2px);
 }
 .inspector{
-    box-shadow: 0 8px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+	box-shadow: 0 8px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
 	background-color: white;
 	width: 32%;
 	height: 96%;
@@ -181,4 +197,14 @@ th,td{
 }
 .checkbox{
 	color: black;
+}
+
+/* width */
+::-webkit-scrollbar {
+	width: 7px;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+	background: #555; 
 }

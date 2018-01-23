@@ -342,7 +342,6 @@ var inspector = {
 };
 inspector.graph.inspectee = null;
 
-
 inspectorGraph.cxtmenu({
 	selector: 'node',
 	commands: [
@@ -420,7 +419,6 @@ function command_clicked(dbid) {
 	}
 }
 
-
 //
 // How to add an edge to the worksheet
 //
@@ -461,6 +459,7 @@ function searchMovies(queryString) {
 		session.close();
 		return result;});
 }
+
 //
 // Fetch neighbours to a node, based on some user-specified filters.
 //
@@ -487,8 +486,6 @@ function get_successors(id, fn, err = console.log) {
 
 	return $.getJSON(`successors/${id}?${query}`, fn).fail(err);
 }
-
-
 
 //
 // How to import a node into the worksheet
@@ -625,8 +622,6 @@ function inspect_node(id, err = console.log) {
 	});
 }
 
-
-
 //
 // Define what it means to show "successors" to a node.
 //
@@ -761,8 +756,8 @@ document.getElementById("saveGraph").onclick = function () {
 
 //layout from graphing.js
 document.getElementById("reDagre").onclick = function () { 
-	searchMovies("Top Gun").then(movies => {console.log(movies)});
-	//worksheetGraph.graph.cxtmenu(worksheetCxtMenu);
+	//searchMovies("Top Gun").then(movies => {console.log(movies)});
+	worksheetGraph.graph.cxtmenu(worksheetCxtMenu);
 	//layout( worksheetGraph.graph, 'cose'); //TODO: get cDagre online
 };
 
