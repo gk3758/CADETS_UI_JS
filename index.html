@@ -73,42 +73,38 @@
 				<div class="fill hide" id="worksheetPage">
 
 					<div class="analysisWorksheet" id="analysisWorksheet">
-						
-						<div class="analysisHeader">&nbsp;Available nodes:
-							<form id="nodeFilters" class="form-horizontal well" method="get">
-								<fieldset>
-									<div class="form-group">
-										<label for="filterNodeType" class="col-md-2 control-label">Type</label>
-										<div class="col-md-10">
-											<select id="filterNodeType" class="form-control">
-												<option></option>
-												<option>connection</option>
-												<option>file-version</option>
-												<option>pipe-endpoint</option>
-												<option>process</option>
-												<option>process-meta</option>
-												<option>socket-version</option>
-												<option>machine</option>
-											</select>
-										</div>
-										<label for="filterName" class="col-md-2 control-label">Name</label>
-										<div class="col-md-10">
-											<input id="filterName" class="form-control"/>
-										</div>
-										<label for="filterHost" class="col-md-2 control-label">Host</label>
-										<div class="col-md-10">
-											<input id="filterHost" class="form-control"/>
-										</div>
-										<label for="filterTuple" class="col-md-2 control-label">TCP</label>
-										<div id="filterTuple" class="col-md-10">
-											<input id="filterLocalIp" size="10"/>
-											<input id="filterLocalPort" size="3"/>L<br/>
-											<input id="filterRemoteIp" size="10"/>
-											<input id="filterRemotePort" size="3"/>R
-										</div>
-									</div>
-								</fieldset>
-							</form>
+						<div id="analysisSearch">
+							<font class="analysisHeader" style="color: white">&nbsp;Available nodes:</font>
+							<div class="formBox">
+								<label for="filterNodeType" class="col-md-2 control-label">Type</label>
+								<div class="col-md-10">
+									<select id="filterNodeType" class="form-control">
+										<option></option>
+										<option>connection</option>
+										<option>file-version</option>
+										<option>pipe-endpoint</option>
+										<option>process</option>
+										<option>process-meta</option>
+										<option>socket-version</option>
+										<option>machine</option>
+									</select>
+								</div>
+								<label for="filterName" class="col-md-2 control-label">Name</label>
+								<div class="col-md-10">
+								<input id="filterName" class="form-control"/>
+								</div>
+								<label for="filterHost" class="col-md-2 control-label">Host</label>
+								<div class="col-md-10">
+									<input id="filterHost" class="form-control"/>
+								</div>
+								<label for="filterTuple" class="col-md-2 control-label">TCP</label>
+								<div id="filterTuple" class="col-md-10">
+									<input id="filterLocalIp" size="10"/>
+									<input id="filterLocalPort" size="3"/>L<br/>
+									<input id="filterRemoteIp" size="10"/>
+									<input id="filterRemotePort" size="3"/>R
+								</div>
+							</div>
 						</div>
 						<div class="analysisBody scrollable">
 							<table class="table table-hover">
@@ -120,33 +116,34 @@
 					<div class="worksheet" id="worksheet">
 						<div class="fill" id="worksheetGraph"></div>
 						<div class="worksheetBtns">
-							<button type="button" class="bodyButton" id="hideAnalysisWorksheet">Toggle<br>SideBar</button>
-							<input type="file" class="bodyButton" id="loadGraph" value=""></input>
-							<button type="button" class="bodyButton" id="saveGraph">saveGraph</button>
-							<button type="button" class="bodyButton" id="reDagre">reDagre</button>
-							<button type="button" class="bodyButton" id="reCose-Bilkent">reCose</button>
+							<button type="button" class="bodyButton" id="hideAnalysisWorksheet">Toggle SideBar</button>
+							<input id="loadGraph" name="file" type="file" style="display: none">
+							<button class="bodyButton" onclick="$('#loadGraph').click();">Load</button>
+							<button type="button" class="bodyButton" id="saveGraph">Save</button>
+							<button type="button" class="bodyButton" id="reDagre">Temp</button>
+							<button type="button" class="bodyButton" id="reCose-Bilkent">Cose</button>
 						</div>
 					</div>
 
 					<div class="inspector scrollable">
 						<div class="fill" id="inspectorGraph"></div>
-						<font class="panel-heading" size="+3">&nbsp;Inspector</font>
+						<div class="panel-heading" size="+3">&nbsp;Inspector</div>
 						<div class="filter">
-							<input type="checkbox" id="inspectFiles">Files</input>
-							<input type="checkbox" id="inspectSockets">Sockets</input>
-							<input type="checkbox" id="inspectPipes">Pipes</input>
-							<input type="checkbox" id="inspectProcessMeta">ProcessMetaData</input>
+							<input type="checkbox" class="checkbox" id="inspectFiles">Files</input>
+							<input type="checkbox" class="checkbox" id="inspectSockets">Sockets</input>
+							<input type="checkbox" class="checkbox" id="inspectPipes">Pipes</input>
+							<input type="checkbox" class="checkbox" id="inspectProcessMeta">ProcessMetaData</input>
 						</div>
 						<div class="inspectorT1">
-							<font class="panel-heading">Details</font>
-							<div class="panel-body scrollable">
-								<table id="inspector-detail" class="table table-striped"></table>
+							<div class="panel-heading">&nbsp;Details</div>
+							<div class="scrollable">
+								<table id="inspector-detail"></table>
 							</div>
 						</div>
 						<div class="inspectorT2">
-							<font class="panel-heading">Neighbours</font>
-							<div class="panel-body scrollable">
-								<table id="neighbour-detail" class="table table-striped"></table>
+							<div class="panel-heading">&nbsp;Neighbours</div>
+							<div class="scrollable">
+								<table id="neighbour-detail"></table>
 							</div>
 						</div>
 					</div>
