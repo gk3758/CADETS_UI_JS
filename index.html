@@ -22,7 +22,7 @@
 		<div class="fill">
 
 			<div class="fillHeader">
-				<font class="headerObject" size="+3.5">&nbsp;CADETS/OPUS</font>
+				<font size="+3">&nbsp;CADETS/OPUS</font>
 				<div class="headerButtons">
 					<button type="button"></button>
 					<button type="button" class="headerButton" id="machinesPageBtn">Machines</button>
@@ -39,35 +39,38 @@
 				</div>
 
 				<div class="fill hide" id="notificationPage">
-					<table class="notificationTable">
-						<thead>
-							<tr>
-								<th>Time</th>
-								<th>Local</th>
-								<th>Remote</th>
-								<th>Event</th>
-								<th></th>
-							</tr>
-						</thead>
-						<tbody>
-							<tr>
-								<td>{{ alert.timestamp }}</td>
-								<td>
-									<a href="worksheet?nodeType=socket-version&tcp={{ alert.local_ip }}:{{ alert.local_port }}::">{{ alert.local_ip }}:{{ alert.local_port }}
-									</a>
-								</td>
-								<td>
-									<a href="worksheet?nodeType=socket-version&tcp=::{{ alert.remote_ip }}:{{ alert.remote_port }}">{{ alert.remote_ip }}:{{ alert.remote_port }}
-									</a>
-								</td>
-								<td>{{ alert.event }}</td>
-								<td>
-									<a href="worksheet?nodeType=socket-version&tcp={{ alert.local_ip }}:{{ alert.local_port }}:{{ alert.remote_ip }}:{{ alert.remote_port }}">lookup
-									</a>
-								</td>
-							</tr>
-						</tbody>
-					</table>
+					<div class="notificationForm">
+						<font size="+3" style="color:black;">Alert Notifications</font>
+						<table class="notificationTable">
+							<thead>
+								<tr>
+									<th>Time</th>
+									<th>Local</th>
+									<th>Remote</th>
+									<th>Event</th>
+									<th></th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td>{{ alert.timestamp }}</td>
+									<td>
+										<a href="worksheet?nodeType=socket-version&tcp={{ alert.local_ip }}:{{ alert.local_port }}::">{{ alert.local_ip }}:{{ alert.local_port }}
+										</a>
+									</td>
+									<td>
+										<a href="worksheet?nodeType=socket-version&tcp=::{{ alert.remote_ip }}:{{ alert.remote_port }}">{{ alert.remote_ip }}:{{ alert.remote_port }}
+										</a>
+									</td>
+									<td>{{ alert.event }}</td>
+									<td>
+										<a href="worksheet?nodeType=socket-version&tcp={{ alert.local_ip }}:{{ alert.local_port }}:{{ alert.remote_ip }}:{{ alert.remote_port }}">lookup
+										</a>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
 				</div>
 
 				<div class="fill hide" id="worksheetPage">
@@ -127,7 +130,9 @@
 
 					<div class="inspector scrollable">
 						<div class="fill" id="inspectorGraph"></div>
-						<div class="panel-heading" size="+3">&nbsp;Inspector</div>
+						<div class="panel-heading">
+							<font size="+3" style="color:white">&nbsp;Inspector</font>
+						</div>
 						<div class="filter">
 							<input type="checkbox" class="roundedOne" id="inspectFiles">Files</input>
 							<input type="checkbox" class="roundedOne" id="inspectSockets">Sockets</input>
