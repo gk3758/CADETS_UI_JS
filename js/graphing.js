@@ -223,8 +223,9 @@ function node_metadata(node) {
 	}
 
 	if (timestamp) {
-		metadata.timestamp =
-			moment.unix(timestamp / 1000000000).format('HH:mm[h] D MMM');
+		//****************** remove time temp
+		//metadata.timestamp =
+		//	moment.unix(timestamp / 1000000000).format('HH:mm[h] D MMM');
 	} else {
 		metadata.timestamp = '';
 	}

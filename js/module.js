@@ -4,32 +4,27 @@ var driver = neo4j.driver("bolt://localhost", neo4j.auth.basic("neo4j", "abcde")
 
 
 
-
 var testGraph = cytoscape({
 	container: document.getElementById('worksheetGraph'),
 	boxSelectionEnabled: true,
-	style: cytoscape.stylesheet()
-	.selector('node')
-	.css({
-		'content': 'data(ips)',
-		'text-valign': 'center',
-		'color': 'white',
-		'text-outline-width': 2,
-		'background-color': 'red',
-		'text-outline-color': 'black'
-	})
-	.selector('edge')
-	.css({
-		'curve-style': 'bezier',
-		'target-arrow-shape': 'triangle',
-		'target-arrow-color': 'black',
-		'line-color': 'gray',
-		'width': 1
-	}),
-		animate: false,
-		fit: true,
-		nodeDimensionsIncludeLabels: true,
-		nodeRepulsion: 10000000,
+	//style: cytoscape.stylesheet()
+	// .selector('node')
+	// .css({
+	// 	'content': 'data(ips)',
+	// 	'text-valign': 'center',
+	// 	'color': 'white',
+	// 	'text-outline-width': 2,
+	// 	'background-color': 'red',
+	// 	'text-outline-color': 'black'
+	// })
+	// .selector('edge')
+	// .css({
+	// 	'curve-style': 'bezier',
+	// 	'target-arrow-shape': 'triangle',
+	// 	'target-arrow-color': 'black',
+	// 	'line-color': 'gray',
+	// 	'width': 1
+	// }),
 });
 
 var worksheetGraph = {
@@ -43,20 +38,19 @@ var worksheetCxtMenu =
 	selector: 'node',
 	commands: [
 		{
-			content: 'Inspect',//TODO: get it working
+			content: 'Inspect',//TODO: get it working / needs translating
 			select: function(ele){
-				console.log(ele)
-				//inspect_node(ele.data('id'));
+				inspect_node(ele.data('id'));
 			}
 		},
 		{
-			content: 'Import neighbours',//TODO: get it working
+			content: 'Import neighbours',//TODO: get it working / needs translating
 			select: function(ele){
 			import_neighbours_into_worksheet(ele.data('id'));
 			}
 		},
 		{
-			content: 'Import successors',//TODO: get it working
+			content: 'Import successors',//TODO: get it working / needs translating
 			select: function(ele){
 			successors(ele.data('id'));
 			}
@@ -68,10 +62,9 @@ var worksheetCxtMenu =
 			}
 		},
 		{
-			content: 'Files read',//TODO: get it working
+			content: 'Files read',//TODO: get it working / test
 			select: function(ele){
-				var id = ele.data('id');
-				$.getJSON(`files_read/${id}`, function(result) {
+				var id = ele.data('id', function(result) {
 					let str = '';
 					Array.from(result.names).forEach(function(name) {
 						str += `<li>${name}</li>`;  // XXX: requires trusted UI server!
@@ -83,10 +76,10 @@ var worksheetCxtMenu =
 			}
 		},
 		{
-			content: 'Commands',//TODO: get it working
+			content: 'Commands',//TODO: get it working / test 
 			select: function(ele){
 				var id = ele.data('id');
-				$.getJSON(`cmds/${id}`, function(result) {
+				cmd_query(id, function(result) {
 					let message = `<h2>Commands run by node ${id}:</h2>`;
 					if (result.cmds.length == 0) {
 						message += '<p>none</p>';
@@ -114,114 +107,16 @@ var worksheetCxtMenu =
 				ele.remove();
 			}
 		},
-						
 	]
 };
 
-var cy = cytoscape({
+var machineGraph = cytoscape({
 	container: document.getElementById('machineGraph'),
-	elements: [
-	{ data: { id: 'EN-1020', name: 'Introduction to Programming' } },
-	{ data: { id: 'EN-1040', name: 'Mechanisms and Electric Circuits' } },
-	{ data: { id: 'EN-3861', name: 'Digital Logic' } },
-	{ data: { id: 'EN-3891', name: 'Foundations of Programming' } },
-	{ data: { id: 'EN-4862', name: 'Microprocessors' } },
-	{ data: { id: 'EN-4892', name: 'Data Structures' } },
-	{ data: { id: 'EN-5865', name: 'Digital Systems' } },
-	{ data: { id: 'EN-5895', name: 'Software Design' } },
-	{ data: { id: 'EN-6861', name: 'Computer Architecture' } },
-	{ data: { id: 'EN-6892', name: 'Algorithms: Complexity and Correctness' } },
-	{ data: { id: 'EN-7894', name: 'Concurrent Programming' } },
-	{ data: { id: 'EN-8894', name: 'Real-time Operating Systems' } },
-	{
-		data: {
-			id: '1020-3891',
-			source: 'EN-1020',
-			target: 'EN-3891'
-		}
-	},
-	{
-		data: {
-			id: '1040-3861',
-			source: 'EN-1040',
-			target: 'EN-3861'
-		}
-	},
-	{
-		data: {
-			id: '3861-4862',
-			source: 'EN-3861',
-			target: 'EN-4862'
-		}
-	},
-	{
-		data: {
-			id: '3891-4892',
-			source: 'EN-3891',
-			target: 'EN-4892'
-		}
-	},
-	{
-		data: {
-			id: '3891-5865',
-			source: 'EN-3891',
-			target: 'EN-5865'
-		}
-	},
-	{
-		data: {
-			id: '4862-5865',
-			source: 'EN-4862',
-			target: 'EN-5865'
-		}
-	},
-	{
-		data: {
-			id: '4892-5895',
-			source: 'EN-4892',
-			target: 'EN-5895'
-		}
-	},
-	{
-		data: {
-			id: '5865-6861',
-			source: 'EN-5865',
-			target: 'EN-6861'
-		}
-	},
-	{
-		data: {
-			id: '5895-6892',
-			source: 'EN-5895',
-			target: 'EN-6892'
-		}
-	},
-	{
-		data: {
-			id: '6861-7894',
-			source: 'EN-6861',
-			target: 'EN-7894'
-		}
-	},
-	{
-		data: {
-			id: '6892-7894',
-			source: 'EN-6892',
-			target: 'EN-7894'
-		}
-	},
-	{
-		data: {
-			id: '7894-8894',
-			source: 'EN-7894',
-			target: 'EN-8894'
-		}
-	}],
 	style: cytoscape.stylesheet()
 	.selector('node')
 	.css({
-		'content': 'data(id)',
-		'text-valign': 'center',
+		'content': 'data(ips)',
+		'text-valign': 'top',
 		'color': 'white',
 		'text-outline-width': 2,
 		'background-color': 'red',
@@ -237,8 +132,7 @@ var cy = cytoscape({
 	})
 });
 
-layout( cy, 'cose');
-
+setup_machines();
 
 var inspectorGraph = cytoscape({
 	container: document.getElementById('inspectorGraph'),
@@ -446,21 +340,36 @@ function searchMovies(queryString) {
 		return result;});
 }
 
-function get_machines() {
+function cmd_query(id){
+	var session = driver.session();
+	cmds = session.run(`MATCH (n:Process)<-[:PROC_PARENT]-(c:Process) 
+						WHERE id(n) = ${id} 
+						RETURN c ORDER BY c.timestamp`)
+	.then(result => {return result.records
+		console.log(result.records) });//.get('c')
+
+	session.close();
+}
+
+function file_read_query(id){
+	var session = driver.session();
+	nodes = session.run(`MATCH (n:Process)<-[e:PROC_OBJ]-(c:File)
+						WHERE id(n) = ${id} AND e.state in ['BIN', 'READ', 'RaW']
+						RETURN c.name AS g_name`)
+	.then(result => {return result.records
+		console.log(result.records) });
+	// if not len(files):
+	//     flask.abort(404)
+}
+
+function setup_machines() {
 	var session = driver.session();
 	nodes = session.run("MATCH (m:Machine) RETURN m")
 	.then(result => {return result.records.forEach(function (record) 
 		{
-			console.log(record);//.get('m'));
-			var temp = record.get('m');
-			worksheetGraph.graph.add([
-				{group: "nodes", data: {
-					id: temp['identity']['low'],
-					name: temp['properties']['name'],
-					ips: temp['properties']['ips'],
-					type: temp['labels'],
-					isExternal: temp['properties']['external']}}
-			])
+			//console.log(record.get('m'));
+			var nodeData = parseNeo4jNode(record.get('m'));
+			add_node(nodeData, machineGraph);
 		});
 	});
 	edges = session.run("MATCH (:Machine)-[e]->(:Machine) RETURN DISTINCT e")
@@ -468,8 +377,8 @@ function get_machines() {
 		{
 			//console.log(record.get('e'));
 			var temp = record.get('e');
-			worksheetGraph.graph.add([
-				{ group: "edges", data: { 
+			machineGraph.add([
+				{ group: "edges", data: {
 					id: temp['identity']['low'],
 					source: temp['start']['low'], 
 					target: temp['end']['low']}}
@@ -477,29 +386,24 @@ function get_machines() {
 		});
 		session.close();
 	});
+	layout( machineGraph, 'cose');
 }
 
-// .records.forEach(function (record) {
-//       console.log(record.get('name'));
-//     });
-
-//     return flask.jsonify({'nodes': nodes, 'edges': edges})
-
-function parseNeo4jNode(o,nonm){
+function parseNeo4jNode(o){
 	var data = {'id': o['identity']['low']};
 	var labels = o['labels'];
 	if (labels.indexOf('Socket') > -1){
-		data.push({'type': "socket-version",
+		data.add({'type': "socket-version",
 					'names': o['properties']['name'],
 					'creation': o['properties']['timestamp']['low']});
 		//data.update(o.properties);
 	}
 	else if (labels.indexOf('Pipe') > -1){
-		data.push({'type': "pipe-endpoint",
+		data.add({'type': "pipe-endpoint",
 					'creation': o['properties']['timestamp']['low']});
 		//data.update(o.properties);
 	}
-	// else if 'Process' in labels{
+	// else if (labels.indexOf('Process') > -1) in labels{
 	// 	data.update({'type': "process",
 	// 				'uuid': o['uuid'],
 	// 				'host': o['host'],
@@ -512,14 +416,14 @@ function parseNeo4jNode(o,nonm){
 	// 		for k in ['uid', 'euid', 'ruid', 'suid',
 	// 		'gid', 'egid', 'rgid', 'sgid']});
 	// }
-		if (labels.indexOf('Machine') > -1){
-			data.push({'type': "machine",
-						'uuid': o['uuid'],
-						'ips': o['properties']['ips'],
-						'names': o['properties']['name'],
-						'first_seen': o['properties']['timestamp']['low'],
-						'external': o['properties']['external']});
-			} 
+	else if (labels.indexOf('Machine') > -1){
+		data.type = "machine";
+		data.uuid = o['properties']['uuid'];
+		data.ips = o['properties']['ips'];
+		data.names = o['properties']['name'];
+		data.first_seen = o['properties']['timestamp']['low'];
+		data.external = o['properties']['external'];
+	} 
 	// else if 'Meta' in labels{
 	// 	data.update({'type': "process-meta"});
 	// 	data.update(o.properties);
@@ -556,13 +460,14 @@ function parseNeo4jNode(o,nonm){
 
 	return data;
 }
-function parseNeo4jEdge(self, o){
-	// type_map = {'PROC_PARENT': 'parent',
-	// 			'PROC_OBJ': 'io',
-	// 			'META_PREV': 'proc-metadata',
-	// 			'PROC_OBJ_PREV': 'proc-change',
-	// 			'GLOB_OBJ_PREV': 'file-change',
-	// 			'COMM': 'comm'};
+function parseNeo4jEdge(o){
+	var type_map = {'PROC_PARENT': 'parent'};
+	type_map.PROC_OBJ = 'io';
+	type_map.META_PREV = 'proc-metadata';
+	type_map.PROC_OBJ_PREV = 'proc-change';
+	type_map.GLOB_OBJ_PREV = 'file-change';
+	type_map.COMM = 'comm';
+	var type = o['type'];
 	// state = o['state'] if 'state' in o else None
 	// if state is not None{
 	// 	if state == "NONE"{
@@ -585,9 +490,9 @@ function parseNeo4jEdge(self, o){
 	// 	src = o.start
 	// 	dst = o.end
 	// }
-	// else if o.type == 'COMM'{
-	// 	src = o.start
-	// 	dst = o.end
+	// if type == 'COMM'{
+	// 	src = o['start']['low'];
+	// 	dst = o['end']['low'];
 	// }
 	// else{
 	// 	src = o.end
@@ -596,10 +501,11 @@ function parseNeo4jEdge(self, o){
 
 	// return dict({'source': src,
 	// 			'target': dst,
-	// 			'id': int(o.id),
-	// 			'type': type_map[o.type],
+	// 			'id': o['identity']['low']},
+	// 			'type': type_map[type],
 	// 			'state': state});
 }
+
 
 //TODO: replace update with js diver
 /*********************************************************************************/
@@ -656,6 +562,115 @@ function get_neighbours(id, fn, err = console.log) {
 		`&process_meta=${$('#inspectProcessMeta').is(':checked')}`;
 
 	return $.getJSON(`neighbours/${id}?${query}`, fn).fail(err);
+
+// 	def get_neighbours_id(dbid,
+//                       files=True,
+//                       sockets=True,
+//                       pipes=True,
+//                       process_meta=True):
+//     matchers = {'Machine', 'Process', 'Conn'}
+//     if files != 'false':
+//         matchers.add('File')
+//     if sockets != 'false':
+//         matchers.add('Socket')
+//     if pipes != 'false':
+//         matchers.add('Pipe')
+//     if files != 'false' and sockets != 'false' and pipes != 'false':
+//         matchers.add('Global')
+//     if process_meta != 'false':
+//         matchers.add('Meta')
+
+//     neighbours = current_app.db.run("""MATCH (s)-[e]-(d)
+//                                        WHERE
+//                                            id(s)={id}
+//                                            AND NOT
+//                                            (
+//                                                "Machine" in labels(s)
+//                                                AND
+//                                                "Machine" in labels(d)
+//                                            )
+//                                            AND
+//                                            (
+//                                                NOT d:Pipe
+//                                                OR
+//                                                d.fds <> []
+//                                            )
+//                                            AND
+//                                            any(lab in labels(d) WHERE lab IN {labs})
+//                                        RETURN s, e, d""",
+//                                     {'id': dbid,
+//                                      'labs': list(matchers)}).data()
+//     root = {neighbours[0]['s']} if len(neighbours) else set()
+//     if sockets != "false":
+//         m_qry = current_app.db.run("""MATCH (skt:Socket), (mch:Machine)
+//                                       WHERE
+//                                           mch.external
+//                                           AND
+//                                           id(skt)={srcid}
+//                                           AND
+//                                           split(skt.name[0], ":")[0] in mch.ips
+//                                       RETURN skt, mch
+//                                       UNION
+//                                       MATCH (skt:Socket), (mch:Machine)
+//                                       WHERE
+//                                           mch.external
+//                                           AND
+//                                           id(mch)={srcid}
+//                                           AND
+//                                           split(skt.name[0], ":")[0] in mch.ips
+//                                       RETURN skt, mch""",
+//                                    {'srcid': dbid}).data()
+//         m_links = [{'id': row['skt'].id + row['mch'].id,
+//                     'source': row['skt'].id,
+//                     'target': row['mch'].id,
+//                     'type': 'comm',
+//                     'state': None}
+//                    for row in m_qry]
+//         m_nodes = {row['mch'] for row in m_qry} | {row['skt'] for row in m_qry}
+//     else:
+//         m_links = []
+//         m_nodes = set()
+//     return flask.jsonify({'nodes': {row['d'] for row in neighbours} | m_nodes | root,
+//                           'edges': list({row['e'] for row in neighbours}) + m_links})
+
+
+// @frontend.route('/neighbours/<string:uuid>')
+// @params_as_args
+// def get_neighbours_uuid(uuid,
+//                         files=True,
+//                         sockets=True,
+//                         pipes=True,
+//                         process_meta=True):
+//     matchers = {'Machine', 'Process', 'Conn'}
+//     if files != 'false':
+//         matchers.add('File')
+//     if sockets != 'false':
+//         matchers.add('Socket')
+//     if pipes != 'false':
+//         matchers.add('Pipe')
+//     if files != 'false' and sockets != 'false' and pipes != 'false':
+//         matchers.add('Global')
+//     if process_meta != 'false':
+//         matchers.add('Meta')
+
+//     res = current_app.db.run("""MATCH (s)-[e]-(d)
+//                                 WHERE
+//                                     exists(s.uuid)
+//                                     AND (
+//                                        NOT d:Pipe
+//                                        OR
+//                                        d.fds <> []
+//                                     )
+//                                     AND
+//                                     s.uuid={uuid}
+//                                     AND
+//                                     any(lab in labels(d) WHERE lab IN {labs})
+//                                 RETURN s, e, d""",
+//                              {'uuid': uuid,
+//                               'labs': list(matchers)}).data()
+//     root = {res[0]['s']} if len(res) else set()
+//     return flask.jsonify({'nodes': {row['d'] for row in res} | root,
+//                           'edges': {row['e'] for row in res}})
 }
 
 //
@@ -670,6 +685,127 @@ function get_successors(id, fn, err = console.log) {
 		`&max_depth=100`;
 
 	return $.getJSON(`successors/${id}?${query}`, fn).fail(err);
+	// def successors_query(dbid,
+ //                     max_depth='4',
+ //                     files=True,
+ //                     sockets=True,
+ //                     pipes=True,
+ //                     process_meta=True):
+ //    max_depth = int(max_depth)
+ //    matchers = set()
+ //    if files != 'false':
+ //        matchers.add('File')
+ //    if sockets != 'false':
+ //        matchers.add('Socket')
+ //    if pipes != 'false':
+ //        matchers.add('Pipe')
+ //    if files != 'false' and sockets != 'false' and pipes != 'false':
+ //        matchers.add('Global')
+ //    matchers = list(matchers)
+ //    if files == 'false' and sockets == 'false' and pipes == 'false':
+ //        matchers = None
+ //    print(matchers)
+ //    source = current_app.db.run("""MATCH (n)
+ //                                   WHERE id(n)={dbid}
+ //                                   RETURN n""",
+ //                                {'dbid': dbid}).single()
+ //    if source is None:
+ //        flask.abort(404)
+
+ //    source = source['n']
+ //    process = [(max_depth, source)]
+ //    nodes = []
+ //    while len(process):
+ //        cur_depth, cur = process.pop(0)
+ //        nodes.append(cur)
+ //        neighbours = None
+ //        if 'Global' in cur.labels:
+ //            neighbours = current_app.db.run("""MATCH (cur:Global)-[e]->(n:Process)
+ //                                               WHERE
+ //                                                   id(cur)={curid}
+ //                                                   AND
+ //                                                   e.state in ['BIN', 'READ', 'RaW', 'CLIENT', 'SERVER']
+ //                                               RETURN n, e
+ //                                               UNION
+ //                                               MATCH (cur:Global)<-[e]-(n:Global)
+ //                                               WHERE
+ //                                                   id(cur)={curid}
+ //                                                   AND
+ //                                                   (
+ //                                                       NOT n:Pipe
+ //                                                       OR
+ //                                                       n.fds <> []
+ //                                                   )
+ //                                                   AND
+ //                                                   NOT {glabs} is Null
+ //                                                   AND
+ //                                                   any(lab in labels(n) WHERE lab IN {glabs})
+ //                                               RETURN n, e
+ //                                               UNION
+ //                                               MATCH (cur:Global)-[e]-(n:Conn)
+ //                                               WHERE id(cur)={curid}
+ //                                               RETURN n, e""",
+ //                                            {'curid': cur.id,
+ //                                             'glabs': matchers}).data()
+ //        elif 'Process' in cur.labels:
+ //            neighbours = current_app.db.run("""MATCH (cur:Process)<-[e]-(n:Global)
+ //                                               WHERE
+ //                                                   id(cur)={curid}
+ //                                                   AND
+ //                                                   e.state in ['WRITE', 'RaW', 'CLIENT', 'SERVER']
+ //                                                   AND
+ //                                                   (
+ //                                                       NOT n:Pipe
+ //                                                       OR
+ //                                                       n.fds <> []
+ //                                                   )
+ //                                                   AND
+ //                                                   NOT {glabs} is Null
+ //                                                   AND
+ //                                                   any(lab in labels(n) WHERE lab IN {glabs})
+ //                                               RETURN n, e
+ //                                               UNION
+ //                                               MATCH (cur:Process)<-[e]-(n:Process)
+ //                                               WHERE id(cur)={curid}
+ //                                               RETURN n, e""",
+ //                                            {'curid': cur.id,
+ //                                             'glabs': matchers}).data()
+ //        elif 'Conn' in cur.labels:
+ //            neighbours = current_app.db.run("""MATCH (cur:Conn)-[e]-(n:Global)
+ //                                               WHERE
+ //                                                   id(cur)={curid}
+ //                                                   AND
+ //                                                   (
+ //                                                       NOT n:Pipe
+ //                                                       OR
+ //                                                       n.fds <> []
+ //                                                   )
+ //                                                   AND
+ //                                                   NOT {glabs} is Null
+ //                                                   AND
+ //                                                   any(lab in labels(n) WHERE lab IN {glabs})
+ //                                               RETURN n, e""",
+ //                                            {'curid': cur.id,
+ //                                             'glabs': matchers}).data()
+ //        if neighbours is None:
+ //            continue
+ //        for row in neighbours:
+ //            if row['n'] in nodes or row['n'] in [n for d, n in process if d < (cur_depth - 1)]:
+ //                continue
+ //            if cur_depth > 0:
+ //                process.append((cur_depth - 1, row['n']))
+
+ //    edata = current_app.db.run("""MATCH (a)-[e]-(b)
+ //                                  WHERE id(a) IN {ids} AND id(b) IN {ids}
+ //                                  RETURN DISTINCT e""",
+ //                               {'ids': [n.id for n in nodes]}).data()
+
+ //    edges = [row['e'] for row in edata]
+
+ //    return flask.jsonify({'nodes': nodes,
+ //                          'edges': edges})
+
+
 }
 
 //
@@ -688,6 +824,7 @@ function import_into_worksheet(id, err = console.log) {
 		y: graph.height() / 2,
 	};
 
+	//TODO: make worksheet detail func first then use it here check if it is the right one
 	return $.getJSON(`detail/${id}`, function(result) {
 		let promise = null;
 
@@ -718,7 +855,8 @@ function import_into_worksheet(id, err = console.log) {
 				}
 			});
 		}).fail(err).then(function(){
-			attach_context_menu(graph, '#worksheet', worksheet_context_items);
+			// ******old cxt menu
+			//attach_context_menu(graph, '#worksheet', worksheet_context_items);
 		});
 	});
 }
@@ -751,6 +889,15 @@ function inspect_node(id, err = console.log) {
 
 	inspector.detail.empty();
 	inspector.neighbours.empty();
+
+
+//check if this is the right one
+// def get_detail_id(identifier):
+//     query = current_app.db.run('MATCH (n) WHERE id(n)={id} RETURN n',
+//                                {'id': identifier}).single()
+//     if query is None:
+//         flask.abort(404)
+//     return flask.jsonify(query['n'])
 
 	$.getJSON(`detail/${id}`, function(result) {
 		for (let property in result) {
@@ -829,8 +976,10 @@ function successors(id) {
 		for (let e of result.edges) {
 			add_edge(e, graph);
 		}
-
-		attach_context_menu(graph, '#worksheet', worksheet_context_items);
+		//
+		//***** old cxt menus
+		//
+		//attach_context_menu(graph, '#worksheet', worksheet_context_items);
 	});
 }
 
@@ -932,7 +1081,7 @@ document.getElementById("hideAnalysisWorksheet").onclick = function () {
 };
 
 document.getElementById("loadGraph").onchange = function () {
-	//load(this.files[0], worksheetGraph);
+	load(this.files[0], worksheetGraph);
 };
 
 document.getElementById("saveGraph").onclick = function () { 
@@ -945,12 +1094,12 @@ document.getElementById("reDagre").onclick = function () {
 	//searchMovies("Top Gun").then(movies => {console.log(movies)});
 	//worksheetGraph.graph.cxtmenu(worksheetCxtMenu);
 	//layout( worksheetGraph.graph, 'cose'); //TODO: get cDagre online
-	get_machines();
 };
 
 //layout from graphing.js
 document.getElementById("reCose-Bilkent").onclick = function () { 
 	layout( worksheetGraph.graph, 'cose'); //TODO: get cose-bilkent online
+	layout( machineGraph, 'cose');
 };
 
 //Button logic ends
