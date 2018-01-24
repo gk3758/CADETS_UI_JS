@@ -72,9 +72,33 @@ var driver = neo4j.driver("bolt://localhost", neo4j.auth.basic("neo4j", "abcde")
 
 
 
+
+
 var testGraph = cytoscape({
 	container: document.getElementById('worksheetGraph'),
 	boxSelectionEnabled: true,
+	style: cytoscape.stylesheet()
+	.selector('node')
+	.css({
+		'content': 'data(ips)',
+		'text-valign': 'center',
+		'color': 'white',
+		'text-outline-width': 2,
+		'background-color': 'red',
+		'text-outline-color': 'black'
+	})
+	.selector('edge')
+	.css({
+		'curve-style': 'bezier',
+		'target-arrow-shape': 'triangle',
+		'target-arrow-color': 'black',
+		'line-color': 'gray',
+		'width': 1
+	}),
+		animate: false,
+		fit: true,
+		nodeDimensionsIncludeLabels: true,
+		nodeRepulsion: 10000000,
 });
 
 var worksheetGraph = {
@@ -90,7 +114,8 @@ var worksheetCxtMenu =
 		{
 			content: 'Inspect',//TODO: get it working
 			select: function(ele){
-				inspect_node(ele.data('id'));
+				console.log(ele)
+				//inspect_node(ele.data('id'));
 			}
 		},
 		{
@@ -139,8 +164,8 @@ var worksheetCxtMenu =
 						for (let command of result.cmds) {
 							console.log(command);
 							message += `<li><a onclick="command_clicked(${command.dbid})">${command.cmd}</a></li>`;
-				  		}
-				  		message += '</ul>';
+						}
+						message += '</ul>';
 					}
 					vex.dialog.alert({ unsafeMessage: message });
 				});
@@ -417,7 +442,7 @@ inspectorGraph.cxtmenu({
 		{
 			content: 'Import node',//TODO: get it working
 			select: function(ele){
-				console.log(ele.data('id'));
+				//console.log(ele.data('id'));
 				import_into_worksheet(ele.data('id'));		
 		}
 		},
@@ -430,7 +455,7 @@ inspectorGraph.cxtmenu({
 		{
 			content: 'Inspect',//TODO: get it working
 			select: function(ele){
-				console.log(ele);
+				//console.log(ele);
 				inspect_node(ele.data("id"));
 		}
 		},
@@ -475,8 +500,181 @@ function toggle_node_importance(id) {//TODO: add important class
 	});
 }
 
+
+function searchMovies(queryString) {
+	var session = driver.session();
+	return session//Top Gun
+		.run(
+			'MATCH (movie:Movie)<-[:ACTED_IN | :WROTE]-(actor:Person) \
+			WHERE movie.title =~ {title} \
+			RETURN actor',
+		{title: '(?i).*' + queryString + '.*'}
+	)
+	.then(result => {
+		session.close();
+		return result;});
+}
+
+function get_machines() {
+	var session = driver.session();
+	nodes = session.run("MATCH (m:Machine) RETURN m")
+	.then(result => {return result.records.forEach(function (record) 
+		{
+			console.log(record);//.get('m'));
+			var temp = record.get('m');
+			worksheetGraph.graph.add([
+				{group: "nodes", data: {
+					id: temp['identity']['low'],
+					name: temp['properties']['name'],
+					ips: temp['properties']['ips'],
+					type: temp['labels'],
+					isExternal: temp['properties']['external']}}
+			])
+		});
+	});
+	edges = session.run("MATCH (:Machine)-[e]->(:Machine) RETURN DISTINCT e")
+	.then(result => {return result.records.forEach(function (record) 
+		{
+			//console.log(record.get('e'));
+			var temp = record.get('e');
+			worksheetGraph.graph.add([
+				{ group: "edges", data: { 
+					id: temp['identity']['low'],
+					source: temp['start']['low'], 
+					target: temp['end']['low']}}
+			])
+		});
+		session.close();
+	});
+}
+
+// .records.forEach(function (record) {
+//       console.log(record.get('name'));
+//     });
+
+//     return flask.jsonify({'nodes': nodes, 'edges': edges})
+
+function parseNeo4jNode(o,nonm){
+	var data = {'id': o['identity']['low']};
+	var labels = o['labels'];
+	if (labels.indexOf('Socket') > -1){
+		data.push({'type': "socket-version",
+					'names': o['properties']['name'],
+					'creation': o['properties']['timestamp']['low']});
+		//data.update(o.properties);
+	}
+	else if (labels.indexOf('Pipe') > -1){
+		data.push({'type': "pipe-endpoint",
+					'creation': o['properties']['timestamp']['low']});
+		//data.update(o.properties);
+	}
+	// else if 'Process' in labels{
+	// 	data.update({'type': "process",
+	// 				'uuid': o['uuid'],
+	// 				'host': o['host'],
+	// 				'pid': o['pid'],
+	// 				'username': o['meta_login'] if 'meta_login' in o else None,
+	// 				'cmdline': o['cmdline'] if o['cmdline'] else None,
+	// 				'last_update': o['meta_ts'],
+	// 				'saw_creation': not o['anomalous']});
+	// 	data.update({k: o['meta_%s' % k] if ('meta_%s' % k) in o else None
+	// 		for k in ['uid', 'euid', 'ruid', 'suid',
+	// 		'gid', 'egid', 'rgid', 'sgid']});
+	// }
+		if (labels.indexOf('Machine') > -1){
+			data.push({'type': "machine",
+						'uuid': o['uuid'],
+						'ips': o['properties']['ips'],
+						'names': o['properties']['name'],
+						'first_seen': o['properties']['timestamp']['low'],
+						'external': o['properties']['external']});
+			} 
+	// else if 'Meta' in labels{
+	// 	data.update({'type': "process-meta"});
+	// 	data.update(o.properties);
+	// }
+	// else if 'Conn' in labels{
+	// 	data.update(o.properties);
+	// 	data['ctype'] = data['type'] if 'type' in data else 'TCP';
+	// 	if data['ctype'] == 'TCP'{
+	// 		data['endpoints'] = [data['client_ip'] + ":" + data['client_port'],
+	// 							data['server_ip'] + ":" + data['server_port']];
+	// 	}
+	// 	else if data['ctype'] == 'Pipe'{
+	// 		data['endpoints'] = ['wrpipe: ' + short_hash(data['wrpipe']),
+	// 							'rdpipe: ' + short_hash(data['rdpipe'])];
+	// 	}
+	// 	data.update({'type': "connection"});
+	// }
+	// else{
+	// 	data.update({'type': "file-version",
+	// 				'uuid': o['uuid'],
+	// 				'host': o['host'],
+	// 				'names': o['name'],
+	// 				'creation': o['timestamp'],
+	// 				'saw_creation': not o['anomalous']});
+	// }
+	// if 'host' in o and o['host'] in self.machines{
+	// 	(i, name) = self.machines[o['host']];
+	// 	data.update({'hostname': name, 'parent': i});
+	// }
+	// // Calculate a short, easily-compared hash of something unique
+	// // (database ID if we don't have a UUID)
+	// unique = o['uuid'] if 'uuid' in o else str(o.id);
+	// data['hash'] = short_hash(unique);
+
+	return data;
+}
+function parseNeo4jEdge(self, o){
+	// type_map = {'PROC_PARENT': 'parent',
+	// 			'PROC_OBJ': 'io',
+	// 			'META_PREV': 'proc-metadata',
+	// 			'PROC_OBJ_PREV': 'proc-change',
+	// 			'GLOB_OBJ_PREV': 'file-change',
+	// 			'COMM': 'comm'};
+	// state = o['state'] if 'state' in o else None
+	// if state is not None{
+	// 	if state == "NONE"{
+	// 		state = None
+	// 	}
+	// 	else if state == "RaW"{
+	// 		state = ['READ', 'WRITE']
+	// 	}
+	// 	else if state in ['CLIENT', 'SERVER']{
+	// 		state = [state, 'READ', 'WRITE']
+	// 	}
+	// 	else if state == "BIN"{
+	// 		state = [state, 'READ']
+	// 	}
+	// 	else{
+	// 		state = [state]
+	// 	}
+	// }
+	// if state is not None and 'WRITE' not in state{
+	// 	src = o.start
+	// 	dst = o.end
+	// }
+	// else if o.type == 'COMM'{
+	// 	src = o.start
+	// 	dst = o.end
+	// }
+	// else{
+	// 	src = o.end
+	// 	dst = o.start
+	// }
+
+	// return dict({'source': src,
+	// 			'target': dst,
+	// 			'id': int(o.id),
+	// 			'type': type_map[o.type],
+	// 			'state': state});
+}
+
 //TODO: replace update with js diver
 /*********************************************************************************/
+
+
+
 
 
 function command_clicked(dbid) {
@@ -515,19 +713,6 @@ function add_edge(data, graph) {
 	});
 }
 
-function searchMovies(queryString) {
-	var session = driver.session();
-	return session//Top Gun
-		.run(
-			'MATCH (movie:Movie)<-[:ACTED_IN | :WROTE]-(actor:Person) \
-			WHERE movie.title =~ {title} \
-			RETURN actor',
-		{title: '(?i).*' + queryString + '.*'}
-	)
-	.then(result => {
-		session.close();
-		return result;});
-}
 
 //
 // Fetch neighbours to a node, based on some user-specified filters.
@@ -578,7 +763,7 @@ function import_into_worksheet(id, err = console.log) {
 		if ('parent' in result && graph.nodes(`[id="${result.parent}"]`).empty()) {
 			promise = import_into_worksheet(result.parent);
 		} else {
-	  		promise = $.when(null);
+			promise = $.when(null);
 		}
 
 		promise.then(function() {
@@ -816,18 +1001,20 @@ document.getElementById("hideAnalysisWorksheet").onclick = function () {
 };
 
 document.getElementById("loadGraph").onchange = function () {
-	load(this.files[0], worksheetGraph);
+	//load(this.files[0], worksheetGraph);
 };
 
 document.getElementById("saveGraph").onclick = function () { 
-	save(worksheetGraph.graph);
+	worksheetGraph.graph.cxtmenu(worksheetCxtMenu);
+	//save(worksheetGraph.graph);
 };
 
 //layout from graphing.js
 document.getElementById("reDagre").onclick = function () { 
 	//searchMovies("Top Gun").then(movies => {console.log(movies)});
-	worksheetGraph.graph.cxtmenu(worksheetCxtMenu);
+	//worksheetGraph.graph.cxtmenu(worksheetCxtMenu);
 	//layout( worksheetGraph.graph, 'cose'); //TODO: get cDagre online
+	get_machines();
 };
 
 //layout from graphing.js
