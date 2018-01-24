@@ -2,7 +2,7 @@ var neo4j = window.neo4j.v1;
 var driver = neo4j.driver("bolt://localhost", neo4j.auth.basic("neo4j", "abcde"));
 
 
-
+//Worksheet Graph
 
 var testGraph = cytoscape({
 	container: document.getElementById('worksheetGraph'),
@@ -110,6 +110,10 @@ var worksheetCxtMenu =
 	]
 };
 
+//Worksheet Graph end
+
+//Machine Graph
+
 var machineGraph = cytoscape({
 	container: document.getElementById('machineGraph'),
 	style: cytoscape.stylesheet()
@@ -133,6 +137,10 @@ var machineGraph = cytoscape({
 });
 
 setup_machines();
+
+//Machine Graph end
+
+//inspector Graph
 
 var inspectorGraph = cytoscape({
 	container: document.getElementById('inspectorGraph'),
@@ -294,6 +302,8 @@ inspectorGraph.cxtmenu({
 });
 
 layout( inspectorGraph, 'cose');
+
+//inspector Graph end
 
 //Functions
 
@@ -550,89 +560,75 @@ function add_edge(data, graph) {
 	});
 }
 
+function get_neighbours_id(id, files=true, sockets=true, pipes=true, process_meta=true){
+	matchers = {'Machine', 'Process', 'Conn'};
+	if (files){
+		matchers.add('File');
+	}
+	if (sockets){
+		matchers.add('Socket');
+	}
+	if (pipes){
+		matchers.add('Pipe');
+	}
+	if (files && sockets && pipes){
+		matchers.add('Global');
+	}
+	if (process_meta){
+		matchers.add('Meta');
+	}
 
-//
-// Fetch neighbours to a node, based on some user-specified filters.
-//
-function get_neighbours(id, fn, err = console.log) {
-	const query =
-		`files=${$('#inspectFiles').is(':checked')}` +
-		`&sockets=${$('#inspectSockets').is(':checked')}` +
-		`&pipes=${$('#inspectPipes').is(':checked')}` +
-		`&process_meta=${$('#inspectProcessMeta').is(':checked')}`;
-
-	return $.getJSON(`neighbours/${id}?${query}`, fn).fail(err);
-
-// 	def get_neighbours_id(dbid,
-//                       files=True,
-//                       sockets=True,
-//                       pipes=True,
-//                       process_meta=True):
-//     matchers = {'Machine', 'Process', 'Conn'}
-//     if files != 'false':
-//         matchers.add('File')
-//     if sockets != 'false':
-//         matchers.add('Socket')
-//     if pipes != 'false':
-//         matchers.add('Pipe')
-//     if files != 'false' and sockets != 'false' and pipes != 'false':
-//         matchers.add('Global')
-//     if process_meta != 'false':
-//         matchers.add('Meta')
-
-//     neighbours = current_app.db.run("""MATCH (s)-[e]-(d)
-//                                        WHERE
-//                                            id(s)={id}
-//                                            AND NOT
-//                                            (
-//                                                "Machine" in labels(s)
-//                                                AND
-//                                                "Machine" in labels(d)
-//                                            )
-//                                            AND
-//                                            (
-//                                                NOT d:Pipe
-//                                                OR
-//                                                d.fds <> []
-//                                            )
-//                                            AND
-//                                            any(lab in labels(d) WHERE lab IN {labs})
-//                                        RETURN s, e, d""",
-//                                     {'id': dbid,
-//                                      'labs': list(matchers)}).data()
-//     root = {neighbours[0]['s']} if len(neighbours) else set()
-//     if sockets != "false":
-//         m_qry = current_app.db.run("""MATCH (skt:Socket), (mch:Machine)
-//                                       WHERE
-//                                           mch.external
-//                                           AND
-//                                           id(skt)={srcid}
-//                                           AND
-//                                           split(skt.name[0], ":")[0] in mch.ips
-//                                       RETURN skt, mch
-//                                       UNION
-//                                       MATCH (skt:Socket), (mch:Machine)
-//                                       WHERE
-//                                           mch.external
-//                                           AND
-//                                           id(mch)={srcid}
-//                                           AND
-//                                           split(skt.name[0], ":")[0] in mch.ips
-//                                       RETURN skt, mch""",
-//                                    {'srcid': dbid}).data()
-//         m_links = [{'id': row['skt'].id + row['mch'].id,
-//                     'source': row['skt'].id,
-//                     'target': row['mch'].id,
-//                     'type': 'comm',
-//                     'state': None}
-//                    for row in m_qry]
-//         m_nodes = {row['mch'] for row in m_qry} | {row['skt'] for row in m_qry}
-//     else:
-//         m_links = []
-//         m_nodes = set()
-//     return flask.jsonify({'nodes': {row['d'] for row in neighbours} | m_nodes | root,
-//                           'edges': list({row['e'] for row in neighbours}) + m_links})
-
+	var session = driver.session();
+	neighbours = session.run(`MATCH (s)-[e]-(d)
+							WHERE id(s)=${id}
+							AND NOT
+							(
+								"Machine" in labels(s)
+								AND
+								"Machine" in labels(d)
+							)
+							AND
+							(
+								NOT d:Pipe
+								OR
+								d.fds <> []
+							)
+							AND
+							any(lab in labels(d) WHERE lab IN {labs})
+							RETURN s, e, d`);//'labs': list(matchers)
+	var root_node = {neighbours[0]['s']} if len(neighbours) else set();
+	if (sockets){
+		m_qry = session.run(`MATCH (skt:Socket), (mch:Machine)
+							WHERE 
+							mch.external
+							AND 
+							id(skt)=${id}
+							AND 
+							split(skt.name[0], ":")[0] in mch.ips
+							RETURN skt, mch
+							UNION
+							MATCH (skt:Socket), (mch:Machine)
+							WHERE 
+							mch.external
+							AND 
+							id(mch)=${id}
+							AND
+							split(skt.name[0], ":")[0] in mch.ips
+							RETURN skt, mch`);
+		m_links = [{'id': row['skt'].id + row['mch'].id,
+					'source': row['skt'].id,
+					'target': row['mch'].id,
+					'type': 'comm',
+					'state': None}
+				   for row in m_qry];
+		m_nodes = {row['mch'] for row in m_qry} | {row['skt'] for row in m_qry}
+	}
+	else{
+		m_links = [];
+		m_nodes = set();
+	}
+	return flask.jsonify({'nodes': {row['d'] for row in neighbours} | m_nodes | root_node,
+						  'edges': list({row['e'] for row in neighbours}) + m_links})
 
 // @frontend.route('/neighbours/<string:uuid>')
 // @params_as_args
@@ -674,138 +670,164 @@ function get_neighbours(id, fn, err = console.log) {
 }
 
 //
+// Fetch neighbours to a node, based on some user-specified filters.
+//
+function get_neighbours(id, fn, err = console.log) {
+	return get_neighbours_id(id,
+							files = $('#inspectFiles').is(':checked'),
+							sockets = $('#inspectSockets').is(':checked'),
+							pipes = $('#inspectPipes').is(':checked'),
+							process_meta = $('#inspectProcessMeta').is(':checked'));
+
+	//**********old code
+	// const query =
+	// 	`files=${$('#inspectFiles').is(':checked')}` +
+	// 	`&sockets=${$('#inspectSockets').is(':checked')}` +
+	// 	`&pipes=${$('#inspectPipes').is(':checked')}` +
+	// 	`&process_meta=${$('#inspectProcessMeta').is(':checked')}`;
+
+	// return $.getJSON(`neighbours/${id}?${query}`, fn).fail(err);
+}
+
+function successors_query(dbid, max_depth='4', files=true, sockets=true, pipes=true, process_meta=true){
+	max_depth = int(max_depth);
+	matchers = set();
+	if (files){
+		matchers.add('File');
+	}
+	if (sockets){
+		matchers.add('Socket');
+	}
+	if (pipes){
+		matchers.add('Pipe');
+	}
+	if (files && sockets && pipes){
+		matchers.add('Global');
+	}
+	matchers = list(matchers);
+	if (!files && !sockets && !pipes){
+		matchers = null;
+	}
+	console.log(matchers);
+	var session = driver.session();
+	source = session.run(`MATCH (n) WHERE id(n)=${dbid} RETURN n`);
+	if (source == null){
+		console.log(404);
+	}
+
+	source = source['n'];
+	process = [(max_depth, source)];
+	nodes = [];
+	while len(process){
+		cur_depth, cur = process.pop(0)
+		nodes.append(cur)
+		var neighbours = None
+		if (cur.labels.indexOf('Global') > -1){
+			neighbours = session.run(`MATCH (cur:Global)-[e]->(n:Process)
+									WHERE
+									id(cur)=${cur.id}
+									AND
+									e.state in ['BIN', 'READ', 'RaW', 'CLIENT', 'SERVER']
+									RETURN n, e
+									UNION
+									MATCH (cur:Global)<-[e]-(n:Global)
+									WHERE
+									id(cur)=${cur.id}
+									AND
+									(
+										NOT n:Pipe
+										OR
+										n.fds <> []
+									)
+									AND
+									NOT ${matchers} is Null
+									AND
+									any(lab in labels(n) WHERE lab IN ${matchers})
+									RETURN n, e
+									UNION
+									MATCH (cur:Global)-[e]-(n:Conn)
+									WHERE id(cur)=${cur.id}
+									RETURN n, e`);//'glabs': matchers}).data()
+		}
+		else if (cur.labels.indexOf('Process') > -1){
+			neighbours = session.run(`MATCH (cur:Process)<-[e]-(n:Global)
+									WHERE
+									id(cur)=${cur.id}
+									AND
+									e.state in ['WRITE', 'RaW', 'CLIENT', 'SERVER']
+									AND
+									(
+										NOT n:Pipe
+										OR
+										n.fds <> []
+									)
+									AND
+									NOT ${matchers} is Null
+									AND
+									any(lab in labels(n) WHERE lab IN ${matchers})
+									RETURN n, e
+									UNION
+									MATCH (cur:Process)<-[e]-(n:Process)
+									WHERE id(cur)=${cur.id}
+									RETURN n, e`);//'glabs': matchers}).data()
+		}
+		else if (cur.labels.indexOf('Conn') > -1){
+			neighbours = session.run(`MATCH (cur:Conn)-[e]-(n:Global)
+									WHERE
+									id(cur)=${cur.id}
+									AND
+									(
+										NOT n:Pipe
+										OR
+										n.fds <> []
+									)
+									AND
+									NOT ${matchers} is Null
+									AND
+									any(lab in labels(n) WHERE lab IN ${matchers})
+									RETURN n, e`);//'glabs': matchers}).data()
+		}
+		if (neighbours == null){
+			continue;
+		}
+		for row in neighbours{
+			if row['n'] in nodes or row['n'] in [n for d, n in process if d < (cur_depth - 1)]{
+				continue;
+			}
+			if (cur_depth > 0){
+				process.append((cur_depth - 1, row['n']));
+			}
+		}
+	}
+	var edata = session.run(`MATCH (a)-[e]-(b) WHERE id(a) IN ${ids} AND id(b) IN ${ids} RETURN DISTINCT e`);
+	//{'ids': [n.id for n in nodes]}).data()
+
+	var edges = [row['e'] for row in edata];
+
+	return flask.jsonify({'nodes': nodes,
+						  'edges': edges});
+}
+
+//
 // Fetch successors to a node, based on some user-specified filters.
 //
 function get_successors(id, fn, err = console.log) {
-	const query =
-		`files=${$('#inspectFiles').is(':checked')}` +
-		`&sockets=${$('#inspectSockets').is(':checked')}` +
-		`&pipes=${$('#inspectPipes').is(':checked')}` +
-		`&process_meta=${$('#inspectProcessMeta').is(':checked')}` +
-		`&max_depth=100`;
+	return successors_query(id,
+					max_depth = 100,
+					files = $('#inspectFiles').is(':checked'),
+					sockets = $('#inspectSockets').is(':checked'),
+					pipes = $('#inspectPipes').is(':checked'),
+					process_meta = $('#inspectProcessMeta').is(':checked'));
 
-	return $.getJSON(`successors/${id}?${query}`, fn).fail(err);
-	// def successors_query(dbid,
- //                     max_depth='4',
- //                     files=True,
- //                     sockets=True,
- //                     pipes=True,
- //                     process_meta=True):
- //    max_depth = int(max_depth)
- //    matchers = set()
- //    if files != 'false':
- //        matchers.add('File')
- //    if sockets != 'false':
- //        matchers.add('Socket')
- //    if pipes != 'false':
- //        matchers.add('Pipe')
- //    if files != 'false' and sockets != 'false' and pipes != 'false':
- //        matchers.add('Global')
- //    matchers = list(matchers)
- //    if files == 'false' and sockets == 'false' and pipes == 'false':
- //        matchers = None
- //    print(matchers)
- //    source = current_app.db.run("""MATCH (n)
- //                                   WHERE id(n)={dbid}
- //                                   RETURN n""",
- //                                {'dbid': dbid}).single()
- //    if source is None:
- //        flask.abort(404)
+//********old code
+	// const query =
+	// 	`files=${$('#inspectFiles').is(':checked')}` +
+	// 	`&sockets=${$('#inspectSockets').is(':checked')}` +
+	// 	`&pipes=${$('#inspectPipes').is(':checked')}` +
+	// 	`&process_meta=${$('#inspectProcessMeta').is(':checked')}` +
+	// 	`&max_depth=100`;
 
- //    source = source['n']
- //    process = [(max_depth, source)]
- //    nodes = []
- //    while len(process):
- //        cur_depth, cur = process.pop(0)
- //        nodes.append(cur)
- //        neighbours = None
- //        if 'Global' in cur.labels:
- //            neighbours = current_app.db.run("""MATCH (cur:Global)-[e]->(n:Process)
- //                                               WHERE
- //                                                   id(cur)={curid}
- //                                                   AND
- //                                                   e.state in ['BIN', 'READ', 'RaW', 'CLIENT', 'SERVER']
- //                                               RETURN n, e
- //                                               UNION
- //                                               MATCH (cur:Global)<-[e]-(n:Global)
- //                                               WHERE
- //                                                   id(cur)={curid}
- //                                                   AND
- //                                                   (
- //                                                       NOT n:Pipe
- //                                                       OR
- //                                                       n.fds <> []
- //                                                   )
- //                                                   AND
- //                                                   NOT {glabs} is Null
- //                                                   AND
- //                                                   any(lab in labels(n) WHERE lab IN {glabs})
- //                                               RETURN n, e
- //                                               UNION
- //                                               MATCH (cur:Global)-[e]-(n:Conn)
- //                                               WHERE id(cur)={curid}
- //                                               RETURN n, e""",
- //                                            {'curid': cur.id,
- //                                             'glabs': matchers}).data()
- //        elif 'Process' in cur.labels:
- //            neighbours = current_app.db.run("""MATCH (cur:Process)<-[e]-(n:Global)
- //                                               WHERE
- //                                                   id(cur)={curid}
- //                                                   AND
- //                                                   e.state in ['WRITE', 'RaW', 'CLIENT', 'SERVER']
- //                                                   AND
- //                                                   (
- //                                                       NOT n:Pipe
- //                                                       OR
- //                                                       n.fds <> []
- //                                                   )
- //                                                   AND
- //                                                   NOT {glabs} is Null
- //                                                   AND
- //                                                   any(lab in labels(n) WHERE lab IN {glabs})
- //                                               RETURN n, e
- //                                               UNION
- //                                               MATCH (cur:Process)<-[e]-(n:Process)
- //                                               WHERE id(cur)={curid}
- //                                               RETURN n, e""",
- //                                            {'curid': cur.id,
- //                                             'glabs': matchers}).data()
- //        elif 'Conn' in cur.labels:
- //            neighbours = current_app.db.run("""MATCH (cur:Conn)-[e]-(n:Global)
- //                                               WHERE
- //                                                   id(cur)={curid}
- //                                                   AND
- //                                                   (
- //                                                       NOT n:Pipe
- //                                                       OR
- //                                                       n.fds <> []
- //                                                   )
- //                                                   AND
- //                                                   NOT {glabs} is Null
- //                                                   AND
- //                                                   any(lab in labels(n) WHERE lab IN {glabs})
- //                                               RETURN n, e""",
- //                                            {'curid': cur.id,
- //                                             'glabs': matchers}).data()
- //        if neighbours is None:
- //            continue
- //        for row in neighbours:
- //            if row['n'] in nodes or row['n'] in [n for d, n in process if d < (cur_depth - 1)]:
- //                continue
- //            if cur_depth > 0:
- //                process.append((cur_depth - 1, row['n']))
-
- //    edata = current_app.db.run("""MATCH (a)-[e]-(b)
- //                                  WHERE id(a) IN {ids} AND id(b) IN {ids}
- //                                  RETURN DISTINCT e""",
- //                               {'ids': [n.id for n in nodes]}).data()
-
- //    edges = [row['e'] for row in edata]
-
- //    return flask.jsonify({'nodes': nodes,
- //                          'edges': edges})
-
-
+	// return $.getJSON(`successors/${id}?${query}`, fn).fail(err);
 }
 
 //
