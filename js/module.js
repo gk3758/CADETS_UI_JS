@@ -1,6 +1,7 @@
 var neo4j = window.neo4j.v1;
 var driver = neo4j.driver("bolt://localhost", neo4j.auth.basic("neo4j", "abcde"));
 
+//******************Don't forget to close sessions!
 
 //Worksheet Graph
 
@@ -560,6 +561,7 @@ function add_edge(data, graph) {
 	});
 }
 
+//the int one
 function get_neighbours_id(id, files=true, sockets=true, pipes=true, process_meta=true){
 	matchers = {'Machine', 'Process', 'Conn'};
 	if (files){
@@ -594,7 +596,7 @@ function get_neighbours_id(id, files=true, sockets=true, pipes=true, process_met
 								d.fds <> []
 							)
 							AND
-							any(lab in labels(d) WHERE lab IN {labs})
+							any(lab in labels(d) WHERE lab IN ${list(matchers)})
 							RETURN s, e, d`);//'labs': list(matchers)
 	var root_node = {neighbours[0]['s']} if len(neighbours) else set();
 	if (sockets){
@@ -629,44 +631,45 @@ function get_neighbours_id(id, files=true, sockets=true, pipes=true, process_met
 	}
 	return flask.jsonify({'nodes': {row['d'] for row in neighbours} | m_nodes | root_node,
 						  'edges': list({row['e'] for row in neighbours}) + m_links})
+}
 
-// @frontend.route('/neighbours/<string:uuid>')
-// @params_as_args
-// def get_neighbours_uuid(uuid,
-//                         files=True,
-//                         sockets=True,
-//                         pipes=True,
-//                         process_meta=True):
-//     matchers = {'Machine', 'Process', 'Conn'}
-//     if files != 'false':
-//         matchers.add('File')
-//     if sockets != 'false':
-//         matchers.add('Socket')
-//     if pipes != 'false':
-//         matchers.add('Pipe')
-//     if files != 'false' and sockets != 'false' and pipes != 'false':
-//         matchers.add('Global')
-//     if process_meta != 'false':
-//         matchers.add('Meta')
+//the string one
+function get_neighbours_uuid(uuid, files=True, sockets=True, pipes=True, process_meta=True){
+	var matchers = {'Machine', 'Process', 'Conn'};
+	if (files){
+		matchers.add('File');
+	}
+	if (sockets){
+		matchers.add('Socket');
+	}
+	if (pipes){
+		matchers.add('Pipe');
+	}
+	if (files && sockets && pipes){
+		matchers.add('Global');
+	}
+	if (process_meta){
+		matchers.add('Meta');
+	}
 
-//     res = current_app.db.run("""MATCH (s)-[e]-(d)
-//                                 WHERE
-//                                     exists(s.uuid)
-//                                     AND (
-//                                        NOT d:Pipe
-//                                        OR
-//                                        d.fds <> []
-//                                     )
-//                                     AND
-//                                     s.uuid={uuid}
-//                                     AND
-//                                     any(lab in labels(d) WHERE lab IN {labs})
-//                                 RETURN s, e, d""",
-//                              {'uuid': uuid,
-//                               'labs': list(matchers)}).data()
-//     root = {res[0]['s']} if len(res) else set()
-//     return flask.jsonify({'nodes': {row['d'] for row in res} | root,
-//                           'edges': {row['e'] for row in res}})
+	var session = driver.session();
+	var res = session.run(`MATCH (s)-[e]-(d)
+						WHERE
+						exists(s.uuid)
+						AND 
+						(
+							NOT d:Pipe
+							OR
+							d.fds <> []
+						)
+						AND
+						s.uuid=${uuid}
+						AND
+						any(lab in labels(d) WHERE lab IN ${list(matchers)})
+						RETURN s, e, d`);//'labs': list(matchers)}).data()
+	var root_node = {res[0]['s']} if len(res) else set();
+	return flask.jsonify({'nodes': {row['d'] for row in res} | root_node,
+						  'edges': {row['e'] for row in res}});
 }
 
 //
@@ -800,6 +803,7 @@ function successors_query(dbid, max_depth='4', files=true, sockets=true, pipes=t
 		}
 	}
 	var edata = session.run(`MATCH (a)-[e]-(b) WHERE id(a) IN ${ids} AND id(b) IN ${ids} RETURN DISTINCT e`);
+	//TODO: swap this out
 	//{'ids': [n.id for n in nodes]}).data()
 
 	var edges = [row['e'] for row in edata];
@@ -914,9 +918,20 @@ function inspect_node(id, err = console.log) {
 
 
 //check if this is the right one
+// @frontend.route('/detail/<int:identifier>')
 // def get_detail_id(identifier):
 //     query = current_app.db.run('MATCH (n) WHERE id(n)={id} RETURN n',
 //                                {'id': identifier}).single()
+//     if query is None:
+//         flask.abort(404)
+//     return flask.jsonify(query['n'])
+
+
+// @frontend.route('/detail/<string:uuid>')
+// def get_detail_uuid(**kwargs):
+//     query = current_app.db.run(
+//             'MATCH (n) WHERE exists(n.uuid) AND n.uuid={uuid} RETURN n',
+//             kwargs).single()
 //     if query is None:
 //         flask.abort(404)
 //     return flask.jsonify(query['n'])

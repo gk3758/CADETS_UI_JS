@@ -67,7 +67,7 @@
 /* 0 */
 /***/ (function(module, exports) {
 
-throw new Error("Module parse failed: Unexpected token (564:22)\nYou may need an appropriate loader to handle this file type.\n| \r\n| function get_neighbours_id(id, files=true, sockets=true, pipes=true, process_meta=true){\r\n| \tmatchers = {'Machine', 'Process', 'Conn'};\r\n| \tif (files){\r\n| \t\tmatchers.add('File');\r");
+throw new Error("Module parse failed: Unexpected token (566:22)\nYou may need an appropriate loader to handle this file type.\n| //the int one\r\n| function get_neighbours_id(id, files=true, sockets=true, pipes=true, process_meta=true){\r\n| \tmatchers = {'Machine', 'Process', 'Conn'};\r\n| \tif (files){\r\n| \t\tmatchers.add('File');\r");
 
 /***/ })
 /******/ ]);
