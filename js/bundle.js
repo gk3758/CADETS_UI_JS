@@ -660,14 +660,14 @@ function update_nodelist(err = console.log) {
 	//TODO: replace Driver
 	//$.getJSON('nodes', query,
 
-	get_nodes(node_type=$('#filterNodeType').val(),
-			name=$('#filterName').val(),
-			host=$('#filterHost').val(),
-			local_ip=$('#filterLocalIp').val(),
-			local_port=$('#filterLocalPort').val(),
-			remote_ip=$('#filterRemoteIp').val(), 
-			remote_port=$('#filterRemotePort').val(),
-			limit='100',
+	get_nodes(node_type = $('#filterNodeType').val(),
+			name = $('#filterName').val(),
+			host = $('#filterHost').val(),
+			local_ip = $('#filterLocalIp').val(),
+			local_port = $('#filterLocalPort').val(),
+			remote_ip = $('#filterRemoteIp').val(), 
+			remote_port = $('#filterRemotePort').val(),
+			limit = '100',
 			function(result) {
 				let nodelist = $('#nodelist');
 				nodelist.empty();
