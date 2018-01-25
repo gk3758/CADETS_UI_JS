@@ -795,8 +795,9 @@ function file_read_query(id){
 						RETURN c.name AS g_name`)
 	.then(result => {return result.records
 		console.log(result.records) });
-	if (files.length <= -1):
+	if (files.length <= -1){
 	    flask.abort(404)
+	}
 }
 
 function setup_machines() {
@@ -886,25 +887,34 @@ function get_neighbours_id(id, files=true, sockets=true, pipes=true, process_met
 								AND
 								split(skt.name[0], ":")[0] in mch.ips
 								RETURN skt, mch`);
-		var m_links = [{'id': row['skt'].id + row['mch'].id,
-					'source': row['skt'].id,
-					'target': row['mch'].id,
-					'type': 'comm',
-					'state': None}
-				   for row in m_qry];
-		m_nodes = {row['mch'] for row in m_qry} | {row['skt'] for row in m_qry}
+		for(row in m_qry){
+			var m_links = {'id': row['skt'].id + row['mch'].id};
+			m_links.source = row['skt'].id;
+			m_links.target = row['mch'].id;
+			m_links.type = 'comm';
+			m_links.state = null; 
+			if(row['mch'] == null){
+				var m_nodes = row['skt'];
+			}
+			else{
+				var m_nodes = row['mch'];
+			}
+			//var m_nodes = row['mch'] == null ? row['skt'] : row['mch'];
+		}//for row in m_qry]
+		
+
 	}
 	else{
-		m_links = [];
-		m_nodes = set();
+		var m_links = [];
+		var m_nodes = set();
 	}
-	return flask.jsonify({'nodes': {row['d'] for row in neighbours} | m_nodes | root_node,
-						  'edges': list({row['e'] for row in neighbours}) + m_links})
+	// return flask.jsonify({'nodes': {row['d'] for row in neighbours} | m_nodes | root_node,
+	// 					  'edges': list({row['e'] for row in neighbours}) + m_links})
 }
 
 //the string one
 function get_neighbours_uuid(uuid, files=True, sockets=True, pipes=True, process_meta=True){
-	var matchers = {'Machine', 'Process', 'Conn'};
+	var matchers = ['Machine', 'Process', 'Conn'];
 	if (files){
 		matchers.add('File');
 	}
@@ -936,9 +946,16 @@ function get_neighbours_uuid(uuid, files=True, sockets=True, pipes=True, process
 						AND
 						any(lab in labels(d) WHERE lab IN ${list(matchers)})
 						RETURN s, e, d`);
-	var root_node = {res[0]['s']} if len(res) else set();
-	return flask.jsonify({'nodes': {row['d'] for row in res} | root_node,
-						  'edges': {row['e'] for row in res}});
+
+	if(res.length){
+		var root_node = res[0]['s'];
+	}
+	else{
+		var root_node = set();
+	}
+	//var root_node = {res[0]['s']} if len(res) else set();
+	// return flask.jsonify({'nodes': {row['d'] for row in res} | root_node,
+	// 					  'edges': {row['e'] for row in res}});
 }
 
 function successors_query(dbid, max_depth='4', files=true, sockets=true, pipes=true, process_meta=true){
@@ -970,10 +987,10 @@ function successors_query(dbid, max_depth='4', files=true, sockets=true, pipes=t
 	source = source['n'];
 	process = [(max_depth, source)];
 	nodes = [];
-	while len(process){
-		cur_depth, cur = process.pop(0)
-		nodes.append(cur)
-		var neighbours = None
+	while (process.length){
+		cur_depth, cur = process.pop(0);
+		nodes.append(cur);
+		var neighbours = null;
 		if (cur.labels.indexOf('Global') > -1){
 			neighbours = session.run(`MATCH (cur:Global)-[e]->(n:Process)
 									WHERE
@@ -1042,10 +1059,10 @@ function successors_query(dbid, max_depth='4', files=true, sockets=true, pipes=t
 		if (neighbours == null){
 			continue;
 		}
-		for row in neighbours{
-			if row['n'] in nodes or row['n'] in [n for d, n in process if d < (cur_depth - 1)]{
-				continue;
-			}
+		for (row in neighbours){//TODO: translate
+			// if row['n'] in nodes or row['n'] in [n for d, n in process if d < (cur_depth - 1)]{
+			// 	continue;
+			// }
 			if (cur_depth > 0){
 				process.append((cur_depth - 1, row['n']));
 			}
@@ -1055,7 +1072,10 @@ function successors_query(dbid, max_depth='4', files=true, sockets=true, pipes=t
 	//TODO: swap this out
 	//{'ids': [n.id for n in nodes]}).data()
 
-	var edges = [row['e'] for row in edata];
+	var edges = [];
+	for(row in edata){
+		edges.push([row['e']]);
+	}
 
 	return flask.jsonify({'nodes': nodes,
 						  'edges': edges});
@@ -1070,16 +1090,16 @@ function get_detail_id(identifier){
 	return flask.jsonify(query['n'])
 }
 
-function get_detail_uuid(**kwargs){
-	var session = driver.session();
-	query = session.run(
-			`MATCH (n) WHERE exists(n.uuid) AND n.uuid=${uuid} RETURN n`);
-			//kwargs).single()
-	if (query == null){
-		console.log(404);
-	}
-	return flask.jsonify(query['n'])
-}
+// function get_detail_uuid(**kwargs){
+// 	var session = driver.session();
+// 	query = session.run(
+// 			`MATCH (n) WHERE exists(n.uuid) AND n.uuid=${uuid} RETURN n`);
+// 			//kwargs).single()
+// 	if (query == null){
+// 		console.log(404);
+// 	}
+// 	return flask.jsonify(query['n'])
+// }
 
 function get_nodes(node_type=null, name=null, host=null, local_ip=null, local_port=null,
 			  remote_ip=null, remote_port=null, limit='100'){
@@ -1103,7 +1123,7 @@ function get_nodes(node_type=null, name=null, host=null, local_ip=null, local_po
 	}
 
 	var session = driver.session();
-	query = session.run((`MATCH (n)
+	query = session.run(`MATCH (n)
 						WHERE 
 						${lab} is Null
 						OR
@@ -1211,8 +1231,8 @@ function get_nodes(node_type=null, name=null, host=null, local_ip=null, local_po
 							)
 						)
 						RETURN DISTINCT n
-						LIMIT ${int(limit)}`);
-	return flask.jsonify([row['n'] for row in query.data()])
+						LIMIT ${parseInt(limit)}`);
+	//return flask.jsonify([row['n'] for row in query.data()])
 }
 
 //Queries end
