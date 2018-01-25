@@ -865,7 +865,7 @@ function setup_machines() {
 
 //the int one
 function get_neighbours_id(id, files=true, sockets=true, pipes=true, process_meta=true){
-	matchers = {'Machine', 'Process', 'Conn'};
+	var matchers = ['Machine', 'Process', 'Conn'];
 	if (files){
 		matchers.add('File');
 	}
@@ -883,7 +883,7 @@ function get_neighbours_id(id, files=true, sockets=true, pipes=true, process_met
 	}
 
 	var session = driver.session();
-	neighbours = session.run(`MATCH (s)-[e]-(d)
+	var neighbours = session.run(`MATCH (s)-[e]-(d)
 							WHERE id(s)=${id}
 							AND NOT
 							(
@@ -900,9 +900,13 @@ function get_neighbours_id(id, files=true, sockets=true, pipes=true, process_met
 							AND
 							any(lab in labels(d) WHERE lab IN ${list(matchers)})
 							RETURN s, e, d`);//'labs': list(matchers)
-	var root_node = {neighbours[0]['s']} if len(neighbours) else set();
+	if (neighbours.length){
+		var root_node = [neighbours[0]['s']];
+	} else {
+		var root_node = [];
+	}
 	if (sockets){
-		m_qry = session.run(`MATCH (skt:Socket), (mch:Machine)
+		var m_qry = session.run(`MATCH (skt:Socket), (mch:Machine)
 							WHERE 
 							mch.external
 							AND 
@@ -919,7 +923,7 @@ function get_neighbours_id(id, files=true, sockets=true, pipes=true, process_met
 							AND
 							split(skt.name[0], ":")[0] in mch.ips
 							RETURN skt, mch`);
-		m_links = [{'id': row['skt'].id + row['mch'].id,
+		var m_links = [{'id': row['skt'].id + row['mch'].id,
 					'source': row['skt'].id,
 					'target': row['mch'].id,
 					'type': 'comm',
