@@ -375,6 +375,10 @@ layout( inspectorGraph, 'cose');
 
 //inspector Graph end
 
+//run
+update_nodelist();
+//run end
+
 //Functions
 
 function remove_neighbours_from_worksheet(id) {
@@ -643,40 +647,50 @@ function successors(id) {
 // Populate node list.
 //
 function update_nodelist(err = console.log) {
-	let query = {
-		node_type: $('#filterNodeType').val(),
-		name: $('#filterName').val(),
-		host: $('#filterHost').val(),
-		local_ip: $('#filterLocalIp').val(),
-		local_port: $('#filterLocalPort').val(),
-		remote_ip: $('#filterRemoteIp').val(),
-		remote_port: $('#filterRemotePort').val(),
-	};
+	// let query = {
+	// 	node_type: $('#filterNodeType').val(),
+	// 	name: $('#filterName').val(),
+	// 	host: $('#filterHost').val(),
+	// 	local_ip: $('#filterLocalIp').val(),
+	// 	local_port: $('#filterLocalPort').val(),
+	// 	remote_ip: $('#filterRemoteIp').val(),
+	// 	remote_port: $('#filterRemotePort').val(),
+	// };
 
 	//TODO: replace Driver
-	$.getJSON('nodes', query, function(result) {
-		let nodelist = $('#nodelist');
-		nodelist.empty();
+	//$.getJSON('nodes', query,
 
-		let current_uuid = null;
-		let colour = 0;
+	get_nodes(node_type=$('#filterNodeType').val(),
+			name=$('#filterName').val(),
+			host=$('#filterHost').val(),
+			local_ip=$('#filterLocalIp').val(),
+			local_port=$('#filterLocalPort').val(),
+			remote_ip=$('#filterRemoteIp').val(), 
+			remote_port=$('#filterRemotePort').val(),
+			limit='100',
+			function(result) {
+				let nodelist = $('#nodelist');
+				nodelist.empty();
 
-		for (let node of result) {
-			let meta = graphing.node_metadata(node);
+				let current_uuid = null;
+				let colour = 0;
 
-			if (node.uuid != current_uuid) {
-				colour += 1;
-				current_uuid = node.uuid;
-			}
+				for (let node of result) {
+					let meta = node_metadata(node);
 
-			nodelist.append(`
-				<tr class="${rowColour(colour)}">
-					<td><a onclick="inspect_node(${node.id})" style="color: black;"><i class="fa fa-${meta.icon}" aria-hidden="true"></i></a></td>
-					<td>${meta.timestamp}</td>
-					<td><a onclick="inspect_node(${node.id})">${meta.label}</a></td>
-				</tr>`);
-		}
-	}).fail(err);
+					if (node.uuid != current_uuid) {
+						colour += 1;
+						current_uuid = node.uuid;
+					}
+
+					nodelist.append(`
+						<tr class="${rowColour(colour)}">
+							<td><a onclick="inspect_node(${node.id})" style="color: black;"><i class="fa fa-${meta.icon}" aria-hidden="true"></i></a></td>
+							<td>${meta.timestamp}</td>
+							<td><a onclick="inspect_node(${node.id})">${meta.label}</a></td>
+						</tr>`);
+				}
+			});//.fail(err);
 }
 
 function rowColour(n) {
@@ -714,15 +728,6 @@ function refreshGraph(graphId){
 
 //Parser
 
-// node_labels = {
-//     'pipe-endpoint': 'Pipe',
-//     'socket-version': 'Socket',
-//     'process': 'Process',
-//     'machine': 'Machine',
-//     'process-meta': 'Meta',
-//     'connection': 'Conn',
-//     'file-version': 'Global',
-// }
 
 function parseNeo4jNode(o){
 	var data = {'id': o['identity']['low']};
@@ -865,7 +870,7 @@ function file_read_query(id){
 	.then(result => {return result.records
 		console.log(result.records) });
 	if (files.length <= -1){
-	    flask.abort(404)
+		flask.abort(404)
 	}
 }
 
@@ -1170,13 +1175,27 @@ function get_detail_id(identifier){
 // 	return flask.jsonify(query['n'])
 // }
 
-function get_nodes(node_type=null, name=null, host=null, local_ip=null, local_port=null,
-			  remote_ip=null, remote_port=null, limit='100'){
-	if  (opus.node_labels.indexOf(node_type) <= -1){
-		var lab = null;
+function get_nodes(node_type=null, 
+				name=null, 
+				host=null, 
+				local_ip=null, 
+				local_port=null, 
+				remote_ip=null, 
+				remote_port=null, 
+				limit='100'){
+	var lab;
+	var node_labels = {'pipe-endpoint': 'Pipe',
+					'socket-version': 'Socket',
+					'process': 'Process',
+					'machine': 'Machine',
+					'process-meta': 'Meta',
+					'connection': 'Conn',
+					'file-version': 'Global'};
+	if  (!(node_type in node_labels)){
+		lab = null;
 	}
 	else{
-		var lab = opus.node_labels[node_type];
+		lab = node_labels[node_type];
 	}
 	if (local_ip == null || local_ip == ""){
 		local_ip = ".*?";
@@ -1192,116 +1211,122 @@ function get_nodes(node_type=null, name=null, host=null, local_ip=null, local_po
 	}
 
 	var session = driver.session();
-	query = session.run(`MATCH (n)
-						WHERE 
-						${lab} is Null
-						OR
-						${lab} in labels(n)
-						WITH n
-						WHERE
-						${name} is Null
-						OR
-						${name} = ''
-						OR
-						any(name in n.name WHERE name CONTAINS ${name})
-						OR
-						n.cmdline CONTAINS ${name}
-						WITH n
-						WHERE
-						${host} is Null
-						OR
-						${host} = ''
-						OR
-						(
-							exists(n.host)
-							AND
-							n.host = ${host}
-						)
-						OR
-						n.uuid = ${host}
-						WITH n
-						MATCH (m:Machine)
-						WHERE
-						(
-							n:Conn
-							AND
-							(
-								n.client_ip=~${local_ip}
+	var query = session.run(`MATCH (n)
+							WHERE 
+								${lab} is Null
 								OR
-								n.server_ip=~${local_ip}
+								${lab} in labels(n)
+							WITH n
+							WHERE
+								${name} is Null
+								OR
+								${name} = ''
+								OR
+								any(name in n.name WHERE name CONTAINS ${name})
+								OR
+								n.cmdline CONTAINS ${name}
+							WITH n
+							WHERE
+								${host} is Null
+								OR
+								${host} = ''
 								OR
 								(
-									n.type = 'Pipe'
+									exists(n.host)
 									AND
-									${local_ip} = '.*?'
+									n.host = ${host}
 								)
-							)
-							AND
-							(
-								n.client_port=~${local_port}
 								OR
-								n.server_port=~${local_port}
-								OR
+								n.uuid = ${host}
+							WITH n
+							MATCH (m:Machine)
+							WHERE
 								(
-									n.type = 'Pipe'
-									AND
-									${local_port} = '.*?'
-								)
-							)
-							AND
-							(
-								n.server_ip=~${remote_ip}
-								OR
-								n.client_ip=~${remote_ip}
-								OR
-								(
-									n.type = 'Pipe'
-									AND
-									${remote_ip} = '.*?'
-								)
-							)
-							AND
-							(
-								n.server_port=~${remote_port}
-								OR
-								n.client_port=~${remote_port}
-								OR
-								(
-									n.type = 'Pipe'
-									AND
-									${remote_port} = '.*?'
-								)
-							)
-						)
-						OR
-						(
-							NOT n:Conn
-							AND
-							(
-								NOT n:Socket
-								OR
-								(
-									n:Socket
-									AND
-									any(name in n.name
-									WHERE name =~ (${remote_ip}+':?'+${remote_port}))
+									n:Conn
 									AND
 									(
-										${local_ip} = ".*?"
+										n.client_ip=~${local_ip}
+										OR
+										n.server_ip=~${local_ip}
 										OR
 										(
-											m.uuid = n.host
+											n.type = 'Pipe'
 											AND
-											any(l_ip in m.ips
-											WHERE l_ip = ${local_ip})                                                 
+											${local_ip} = '.*?'
+										)
+									)
+									AND
+									(
+										n.client_port=~${local_port}
+										OR
+										n.server_port=~${local_port}
+										OR
+										(
+											n.type = 'Pipe'
+											AND
+											${local_port} = '.*?'
+										)
+									)
+									AND
+									(
+										n.server_ip=~${remote_ip}
+										OR
+										n.client_ip=~${remote_ip}
+										OR
+										(
+											n.type = 'Pipe'
+											AND
+											${remote_ip} = '.*?'
+										)
+									)
+									AND
+									(
+										n.server_port=~${remote_port}
+										OR
+										n.client_port=~${remote_port}
+										OR
+										(
+											n.type = 'Pipe'
+											AND
+											${remote_port} = '.*?'
 										)
 									)
 								)
-							)
-						)
-						RETURN DISTINCT n
-						LIMIT ${parseInt(limit)}`);
-	//return flask.jsonify([row['n'] for row in query.data()])
+								OR
+								(
+									NOT n:Conn
+									AND
+									(
+										NOT n:Socket
+										OR
+										(
+											n:Socket
+											AND
+											any(name in n.name
+											WHERE name =~ (${remote_ip}+':?'+${remote_port}))
+											AND
+											(
+												${local_ip} = ".*?"
+												OR
+												(
+													m.uuid = n.host
+													AND
+													any(l_ip in m.ips
+													WHERE l_ip = ${local_ip})
+												)
+											)
+										)
+									)
+								)
+							RETURN DISTINCT n
+							LIMIT ${parseInt(limit)}`)
+	.then(result => {return result.records.forEach(function (record) 
+		{
+			console.log(record.get('n'));
+		});
+		session.close();
+	});
+	return query;//flask.jsonify([row['n'] for row in query.data()])
 }
 
 //Queries end
