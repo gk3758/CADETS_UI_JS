@@ -67,7 +67,7 @@
 /* 0 */
 /***/ (function(module, exports) {
 
-throw new Error("Module parse failed: Unexpected token (931:7)\nYou may need an appropriate loader to handle this file type.\n| \t\t\t\t\t'type': 'comm',\r\n| \t\t\t\t\t'state': None}\r\n| \t\t\t\t   for row in m_qry];\r\n| \t\tm_nodes = {row['mch'] for row in m_qry} | {row['skt'] for row in m_qry}\r\n| \t}\r");
+throw new Error("Module parse failed: Unexpected token (798:24)\nYou may need an appropriate loader to handle this file type.\n| \t.then(result => {return result.records\r\n| \t\tconsole.log(result.records) });\r\n| \tif (files.length <= -1):\r\n| \t    flask.abort(404)\r\n| }\r");
 
 /***/ })
 /******/ ]);

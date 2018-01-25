@@ -336,18 +336,8 @@ function toggle_node_importance(id) {//TODO: add important class
 	});
 }
 
-
-
-
-
-
-
 //TODO: replace update with js diver
 /*********************************************************************************/
-
-
-
-
 
 function command_clicked(dbid) {
 	inspect_and_import(dbid);
@@ -385,9 +375,6 @@ function add_edge(data, graph) {
 	});
 }
 
-
-
-
 //
 // Fetch neighbours to a node, based on some user-specified filters.
 //
@@ -398,17 +385,8 @@ function get_neighbours(id, fn, err = console.log) {
 							pipes = $('#inspectPipes').is(':checked'),
 							process_meta = $('#inspectProcessMeta').is(':checked'));
 
-	//**********old code
-	// const query =
-	// 	`files=${$('#inspectFiles').is(':checked')}` +
-	// 	`&sockets=${$('#inspectSockets').is(':checked')}` +
-	// 	`&pipes=${$('#inspectPipes').is(':checked')}` +
-	// 	`&process_meta=${$('#inspectProcessMeta').is(':checked')}`;
-
 	// return $.getJSON(`neighbours/${id}?${query}`, fn).fail(err);
 }
-
-
 
 //
 // Fetch successors to a node, based on some user-specified filters.
@@ -420,14 +398,6 @@ function get_successors(id, fn, err = console.log) {
 					sockets = $('#inspectSockets').is(':checked'),
 					pipes = $('#inspectPipes').is(':checked'),
 					process_meta = $('#inspectProcessMeta').is(':checked'));
-
-//********old code
-	// const query =
-	// 	`files=${$('#inspectFiles').is(':checked')}` +
-	// 	`&sockets=${$('#inspectSockets').is(':checked')}` +
-	// 	`&pipes=${$('#inspectPipes').is(':checked')}` +
-	// 	`&process_meta=${$('#inspectProcessMeta').is(':checked')}` +
-	// 	`&max_depth=100`;
 
 	// return $.getJSON(`successors/${id}?${query}`, fn).fail(err);
 }
@@ -504,8 +474,6 @@ function import_neighbours_into_worksheet(id) {
 	});
 }
 
-
-
 //
 // Define what it means to "inspect" a node.
 //
@@ -517,8 +485,7 @@ function inspect_node(id, err = console.log) {
 	inspector.neighbours.empty();
 
 
-
-
+	//TODO: replace Driver
 	$.getJSON(`detail/${id}`, function(result) {
 		for (let property in result) {
 			inspector.detail.append(`
@@ -603,8 +570,6 @@ function successors(id) {
 	});
 }
 
-
-
 //
 // Populate node list.
 //
@@ -619,7 +584,7 @@ function update_nodelist(err = console.log) {
 		remote_port: $('#filterRemotePort').val(),
 	};
 
-
+	//TODO: replace Driver
 	$.getJSON('nodes', query, function(result) {
 		let nodelist = $('#nodelist');
 		nodelist.empty();
@@ -644,7 +609,6 @@ function update_nodelist(err = console.log) {
 		}
 	}).fail(err);
 }
-
 
 function rowColour(n) {
 	switch (n % 6) {
@@ -762,6 +726,7 @@ function parseNeo4jNode(o){
 
 	return data;
 }
+
 function parseNeo4jEdge(o){
 	var type_map = {'PROC_PARENT': 'parent'};
 	type_map.PROC_OBJ = 'io';
@@ -808,7 +773,6 @@ function parseNeo4jEdge(o){
 	// 			'state': state});
 }
 
-
 //Parser end
 
 //Queries
@@ -831,8 +795,8 @@ function file_read_query(id){
 						RETURN c.name AS g_name`)
 	.then(result => {return result.records
 		console.log(result.records) });
-	// if not len(files):
-	//     flask.abort(404)
+	if (files.length <= -1):
+	    flask.abort(404)
 }
 
 function setup_machines() {
@@ -862,7 +826,6 @@ function setup_machines() {
 	layout( machineGraph, 'cose');
 }
 
-
 //the int one
 function get_neighbours_id(id, files=true, sockets=true, pipes=true, process_meta=true){
 	var matchers = ['Machine', 'Process', 'Conn'];
@@ -884,22 +847,22 @@ function get_neighbours_id(id, files=true, sockets=true, pipes=true, process_met
 
 	var session = driver.session();
 	var neighbours = session.run(`MATCH (s)-[e]-(d)
-							WHERE id(s)=${id}
-							AND NOT
-							(
-								"Machine" in labels(s)
+								WHERE id(s)=${id}
+								AND NOT
+								(
+									"Machine" in labels(s)
+									AND
+									"Machine" in labels(d)
+								)
 								AND
-								"Machine" in labels(d)
-							)
-							AND
-							(
-								NOT d:Pipe
-								OR
-								d.fds <> []
-							)
-							AND
-							any(lab in labels(d) WHERE lab IN ${list(matchers)})
-							RETURN s, e, d`);//'labs': list(matchers)
+								(
+									NOT d:Pipe
+									OR
+									d.fds <> []
+								)
+								AND
+								any(lab in labels(d) WHERE lab IN ${list(matchers)})
+								RETURN s, e, d`);
 	if (neighbours.length){
 		var root_node = [neighbours[0]['s']];
 	} else {
@@ -907,22 +870,22 @@ function get_neighbours_id(id, files=true, sockets=true, pipes=true, process_met
 	}
 	if (sockets){
 		var m_qry = session.run(`MATCH (skt:Socket), (mch:Machine)
-							WHERE 
-							mch.external
-							AND 
-							id(skt)=${id}
-							AND 
-							split(skt.name[0], ":")[0] in mch.ips
-							RETURN skt, mch
-							UNION
-							MATCH (skt:Socket), (mch:Machine)
-							WHERE 
-							mch.external
-							AND 
-							id(mch)=${id}
-							AND
-							split(skt.name[0], ":")[0] in mch.ips
-							RETURN skt, mch`);
+								WHERE 
+								mch.external
+								AND 
+								id(skt)=${id}
+								AND 
+								split(skt.name[0], ":")[0] in mch.ips
+								RETURN skt, mch
+								UNION
+								MATCH (skt:Socket), (mch:Machine)
+								WHERE 
+								mch.external
+								AND 
+								id(mch)=${id}
+								AND
+								split(skt.name[0], ":")[0] in mch.ips
+								RETURN skt, mch`);
 		var m_links = [{'id': row['skt'].id + row['mch'].id,
 					'source': row['skt'].id,
 					'target': row['mch'].id,
@@ -972,7 +935,7 @@ function get_neighbours_uuid(uuid, files=True, sockets=True, pipes=True, process
 						s.uuid=${uuid}
 						AND
 						any(lab in labels(d) WHERE lab IN ${list(matchers)})
-						RETURN s, e, d`);//'labs': list(matchers)}).data()
+						RETURN s, e, d`);
 	var root_node = {res[0]['s']} if len(res) else set();
 	return flask.jsonify({'nodes': {row['d'] for row in res} | root_node,
 						  'edges': {row['e'] for row in res}});
@@ -1036,7 +999,7 @@ function successors_query(dbid, max_depth='4', files=true, sockets=true, pipes=t
 									UNION
 									MATCH (cur:Global)-[e]-(n:Conn)
 									WHERE id(cur)=${cur.id}
-									RETURN n, e`);//'glabs': matchers}).data()
+									RETURN n, e`);
 		}
 		else if (cur.labels.indexOf('Process') > -1){
 			neighbours = session.run(`MATCH (cur:Process)<-[e]-(n:Global)
@@ -1058,7 +1021,7 @@ function successors_query(dbid, max_depth='4', files=true, sockets=true, pipes=t
 									UNION
 									MATCH (cur:Process)<-[e]-(n:Process)
 									WHERE id(cur)=${cur.id}
-									RETURN n, e`);//'glabs': matchers}).data()
+									RETURN n, e`);
 		}
 		else if (cur.labels.indexOf('Conn') > -1){
 			neighbours = session.run(`MATCH (cur:Conn)-[e]-(n:Global)
@@ -1074,7 +1037,7 @@ function successors_query(dbid, max_depth='4', files=true, sockets=true, pipes=t
 									NOT ${matchers} is Null
 									AND
 									any(lab in labels(n) WHERE lab IN ${matchers})
-									RETURN n, e`);//'glabs': matchers}).data()
+									RETURN n, e`);
 		}
 		if (neighbours == null){
 			continue;
@@ -1252,7 +1215,6 @@ function get_nodes(node_type=null, name=null, host=null, local_ip=null, local_po
 	return flask.jsonify([row['n'] for row in query.data()])
 }
 
-
 //Queries end
 
 //Button logic
@@ -1275,7 +1237,6 @@ document.getElementById("WorksheetPageBtn").onclick = function () {
 document.getElementById("hideAnalysisWorksheet").onclick = function () { 
 	$('#analysisWorksheet').toggleClass('hide');
 	$('#worksheet').toggleClass('expandedWorksheet');
-	//$('#worksheetGraph').toggleClass('expandedWorksheet');
 };
 
 document.getElementById("loadGraph").onchange = function () {
@@ -1289,7 +1250,6 @@ document.getElementById("saveGraph").onclick = function () {
 
 //layout from graphing.js
 document.getElementById("reDagre").onclick = function () { 
-	//searchMovies("Top Gun").then(movies => {console.log(movies)});
 	//worksheetGraph.graph.cxtmenu(worksheetCxtMenu);
 	//layout( worksheetGraph.graph, 'cose'); //TODO: get cDagre online
 };
