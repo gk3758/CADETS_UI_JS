@@ -1,7 +1,7 @@
 var neo4j = window.neo4j.v1;
 var driver = neo4j.driver("bolt://localhost", neo4j.auth.basic("neo4j", "abcde"));
 
-//******************Don't forget to close sessions!
+//******************Don't forget to close sessions!!!!!
 
 //Worksheet Graph
 
@@ -337,69 +337,349 @@ function toggle_node_importance(id) {//TODO: add important class
 }
 
 
-function searchMovies(queryString) {
-	var session = driver.session();
-	return session//Top Gun
-		.run(
-			'MATCH (movie:Movie)<-[:ACTED_IN | :WROTE]-(actor:Person) \
-			WHERE movie.title =~ {title} \
-			RETURN actor',
-		{title: '(?i).*' + queryString + '.*'}
-	)
-	.then(result => {
-		session.close();
-		return result;});
+
+
+
+
+
+//TODO: replace update with js diver
+/*********************************************************************************/
+
+
+
+
+
+function command_clicked(dbid) {
+	inspect_and_import(dbid);
+
+	let vexes = vex.getAll();
+	for (let i in vexes) {
+		vexes[i].close();
+	}
 }
 
-function cmd_query(id){
-	var session = driver.session();
-	cmds = session.run(`MATCH (n:Process)<-[:PROC_PARENT]-(c:Process) 
-						WHERE id(n) = ${id} 
-						RETURN c ORDER BY c.timestamp`)
-	.then(result => {return result.records
-		console.log(result.records) });//.get('c')
+//
+// How to add an edge to the worksheet
+//
+function add_edge(data, graph) {
+	// Have we already imported this edge?
+	if (!graph.edges(`#${data.id}`).empty()) {
+		return;
+	}
 
-	session.close();
+	// If the target is explicitly marked as something we read from
+	// (e.g., the by-convention read-from pipe), reverse the edge's direction.
+	let source = graph.nodes(`[id="${data.source}"]`);
+	let target = graph.nodes(`[id="${data.target}"]`);
+
+	if (source.data() && source.data().type == 'process'
+		&& target.data() && target.data().end == 'R') {
+		let tmp = data.source;
+		data.source = data.target;
+		data.target = tmp;
+	}
+
+	graph.add({
+		classes: data.type,
+		data: data,
+	});
 }
 
-function file_read_query(id){
-	var session = driver.session();
-	nodes = session.run(`MATCH (n:Process)<-[e:PROC_OBJ]-(c:File)
-						WHERE id(n) = ${id} AND e.state in ['BIN', 'READ', 'RaW']
-						RETURN c.name AS g_name`)
-	.then(result => {return result.records
-		console.log(result.records) });
-	// if not len(files):
-	//     flask.abort(404)
+
+
+
+//
+// Fetch neighbours to a node, based on some user-specified filters.
+//
+function get_neighbours(id, fn, err = console.log) {
+	return get_neighbours_id(id,
+							files = $('#inspectFiles').is(':checked'),
+							sockets = $('#inspectSockets').is(':checked'),
+							pipes = $('#inspectPipes').is(':checked'),
+							process_meta = $('#inspectProcessMeta').is(':checked'));
+
+	//**********old code
+	// const query =
+	// 	`files=${$('#inspectFiles').is(':checked')}` +
+	// 	`&sockets=${$('#inspectSockets').is(':checked')}` +
+	// 	`&pipes=${$('#inspectPipes').is(':checked')}` +
+	// 	`&process_meta=${$('#inspectProcessMeta').is(':checked')}`;
+
+	// return $.getJSON(`neighbours/${id}?${query}`, fn).fail(err);
 }
 
-function setup_machines() {
-	var session = driver.session();
-	nodes = session.run("MATCH (m:Machine) RETURN m")
-	.then(result => {return result.records.forEach(function (record) 
-		{
-			//console.log(record.get('m'));
-			var nodeData = parseNeo4jNode(record.get('m'));
-			add_node(nodeData, machineGraph);
+
+
+//
+// Fetch successors to a node, based on some user-specified filters.
+//
+function get_successors(id, fn, err = console.log) {
+	return successors_query(id,
+					max_depth = 100,
+					files = $('#inspectFiles').is(':checked'),
+					sockets = $('#inspectSockets').is(':checked'),
+					pipes = $('#inspectPipes').is(':checked'),
+					process_meta = $('#inspectProcessMeta').is(':checked'));
+
+//********old code
+	// const query =
+	// 	`files=${$('#inspectFiles').is(':checked')}` +
+	// 	`&sockets=${$('#inspectSockets').is(':checked')}` +
+	// 	`&pipes=${$('#inspectPipes').is(':checked')}` +
+	// 	`&process_meta=${$('#inspectProcessMeta').is(':checked')}` +
+	// 	`&max_depth=100`;
+
+	// return $.getJSON(`successors/${id}?${query}`, fn).fail(err);
+}
+
+//
+// How to import a node into the worksheet
+//
+function import_into_worksheet(id, err = console.log) {
+	let graph = worksheetGraph.graph;
+
+	// Have we already imported this node?
+	if (!graph.getElementById(id).empty()) {
+		return $.when(null);
+	}
+
+	let position = {
+		x: graph.width() / 2,
+		y: graph.height() / 2,
+	};
+
+	//TODO: make worksheet detail func first then use it here check if it is the right one
+	return $.getJSON(`detail/${id}`, function(result) {
+		let promise = null;
+
+		if ('parent' in result && graph.nodes(`[id="${result.parent}"]`).empty()) {
+			promise = import_into_worksheet(result.parent);
+		} else {
+			promise = $.when(null);
+		}
+
+		promise.then(function() {
+			add_node(result, graph, position);
+		}).then(function() {
+			get_neighbours(id, function(result) {
+				let elements = graph.elements();
+				let node = graph.nodes(`[id="${id}"]`);
+
+				for (let edge of result.edges) {
+					let other = null;
+					if (edge.source == id) {
+						other = elements.nodes(`#${edge.target}`);
+					} else if (edge.target == id) {
+						other = elements.nodes(`#${edge.source}`);
+					}
+
+					if (!other.empty()) {
+						add_edge(edge, graph);
+					}
+				}
+			});
+		}).fail(err).then(function(){
+			// ******old cxt menu
+			//attach_context_menu(graph, '#worksheet', worksheet_context_items);
 		});
 	});
-	edges = session.run("MATCH (:Machine)-[e]->(:Machine) RETURN DISTINCT e")
-	.then(result => {return result.records.forEach(function (record) 
-		{
-			//console.log(record.get('e'));
-			var temp = record.get('e');
-			machineGraph.add([
-				{ group: "edges", data: {
-					id: temp['identity']['low'],
-					source: temp['start']['low'], 
-					target: temp['end']['low']}}
-			])
-		});
-		session.close();
-	});
-	layout( machineGraph, 'cose');
 }
 
+function inspect_and_import(id) {
+	import_into_worksheet(id);
+	inspect_node(id);
+}
+
+//
+// Add a node and all of its neighbours to the worksheet.
+//
+function import_neighbours_into_worksheet(id) {
+	// Get all of the node's neighbours:
+	get_neighbours(id, function(result) {
+		let promise = $.when(null);
+
+		for (let n of result.nodes) {
+			promise.then(function() { import_into_worksheet(n.id); });
+		}
+	});
+}
+
+
+
+//
+// Define what it means to "inspect" a node.
+//
+function inspect_node(id, err = console.log) {
+	// Display the node's details in the inspector "Details" panel.
+	var inspectee;
+
+	inspector.detail.empty();
+	inspector.neighbours.empty();
+
+
+
+
+	$.getJSON(`detail/${id}`, function(result) {
+		for (let property in result) {
+			inspector.detail.append(`
+				<tr>
+					<th>${property}</th>
+					<td>${result[property]}</td>
+				</tr>
+			`)
+		}
+		inspectee = result
+	}).fail(err).then(function() {
+		// Display the node's immediate connections in the inspector "Graph" panel.
+		get_neighbours(id, function(result) {
+			inspector.graph.remove('node');
+
+			add_node(inspectee, inspector.graph);
+
+			for (let n of result.nodes) {
+				add_node(n, inspector.graph);
+
+				let meta = graphing.node_metadata(n);
+				inspector.neighbours.append(`
+					<tr>
+						<td><a onclick="import_into_worksheet(${n.id})" style="color: black;"><i class="fa fa-${meta.icon}" aria-hidden="true"></i></a></td>
+						<td><a onclick="import_into_worksheet(${n.id})">${meta.label}</a></td>
+					</tr>
+				`);
+			}
+
+			for (let e of result.edges) {
+				add_edge(e, inspector.graph);
+			}
+
+			let n = inspector.graph.elements().nodes(`[id="${id}"]`);
+			if (n.empty()) {
+				n = inspector.graph.elements().nodes(`[uuid="${id}"]`);
+			}
+			inspector.graph.inspectee = n;
+
+			// Only use the (somewhat expensive) dagre algorithm when the number of
+			// edges is small enough to be computationally zippy.
+			if (result.edges.length < 100) {
+				layout(inspector.graph, 'dagre');
+			} else {
+				layout(inspector.graph, 'cose');
+			}
+
+			inspector.graph.zoom({
+				level: 1,
+				position: inspector.graph.inspectee.position(),
+			});
+		});
+	});
+}
+
+//
+// Define what it means to show "successors" to a node.
+//
+function successors(id) {
+	let graph = worksheetGraph.graph;
+
+	// Display the node's details in the inspector "Details" panel.
+	get_successors(id, function(result) {
+
+		let position = {
+			x: graph.width() / 2,
+			y: graph.height() / 2,
+		};
+
+		for (let n of result.nodes) {
+			add_node(n, graph, position);
+		}
+
+		let elements = graph.elements();
+		for (let e of result.edges) {
+			add_edge(e, graph);
+		}
+		//
+		//***** old cxt menus
+		//
+		//attach_context_menu(graph, '#worksheet', worksheet_context_items);
+	});
+}
+
+
+
+//
+// Populate node list.
+//
+function update_nodelist(err = console.log) {
+	let query = {
+		node_type: $('#filterNodeType').val(),
+		name: $('#filterName').val(),
+		host: $('#filterHost').val(),
+		local_ip: $('#filterLocalIp').val(),
+		local_port: $('#filterLocalPort').val(),
+		remote_ip: $('#filterRemoteIp').val(),
+		remote_port: $('#filterRemotePort').val(),
+	};
+
+
+	$.getJSON('nodes', query, function(result) {
+		let nodelist = $('#nodelist');
+		nodelist.empty();
+
+		let current_uuid = null;
+		let colour = 0;
+
+		for (let node of result) {
+			let meta = graphing.node_metadata(node);
+
+			if (node.uuid != current_uuid) {
+				colour += 1;
+				current_uuid = node.uuid;
+			}
+
+			nodelist.append(`
+				<tr class="${rowColour(colour)}">
+					<td><a onclick="inspect_node(${node.id})" style="color: black;"><i class="fa fa-${meta.icon}" aria-hidden="true"></i></a></td>
+					<td>${meta.timestamp}</td>
+					<td><a onclick="inspect_node(${node.id})">${meta.label}</a></td>
+				</tr>`);
+		}
+	}).fail(err);
+}
+
+
+function rowColour(n) {
+	switch (n % 6) {
+	case 1:
+		return 'active';
+	case 2:
+		return 'info';
+	case 3:
+		return '';
+	case 4:
+		return 'warning';
+	case 5:
+		return 'active';
+	case 0:
+		return 'success';
+	}
+}
+
+/*********************************************************************************/
+
+function openPage(pageId){
+	$('#machinePage').css('display', 'none');
+	$('#notificationPage').css('display', 'none');
+	$('#worksheetPage').css('display', 'none');
+	$(pageId).css('display', 'block');
+}
+
+function refreshGraph(graphId){
+	$(graphId).css('height', '99%');
+	$(graphId).css('height', '100%');
+}
+
+//Functions end
+
+//Parser
 
 // node_labels = {
 //     'pipe-endpoint': 'Pipe',
@@ -529,48 +809,59 @@ function parseNeo4jEdge(o){
 }
 
 
-//TODO: replace update with js diver
-/*********************************************************************************/
+//Parser end
 
+//Queries
 
+function cmd_query(id){
+	var session = driver.session();
+	cmds = session.run(`MATCH (n:Process)<-[:PROC_PARENT]-(c:Process) 
+						WHERE id(n) = ${id} 
+						RETURN c ORDER BY c.timestamp`)
+	.then(result => {return result.records
+		console.log(result.records) });//.get('c')
 
-
-
-function command_clicked(dbid) {
-	inspect_and_import(dbid);
-
-	let vexes = vex.getAll();
-	for (let i in vexes) {
-		vexes[i].close();
-	}
+	session.close();
 }
 
-//
-// How to add an edge to the worksheet
-//
-function add_edge(data, graph) {
-	// Have we already imported this edge?
-	if (!graph.edges(`#${data.id}`).empty()) {
-		return;
-	}
+function file_read_query(id){
+	var session = driver.session();
+	nodes = session.run(`MATCH (n:Process)<-[e:PROC_OBJ]-(c:File)
+						WHERE id(n) = ${id} AND e.state in ['BIN', 'READ', 'RaW']
+						RETURN c.name AS g_name`)
+	.then(result => {return result.records
+		console.log(result.records) });
+	// if not len(files):
+	//     flask.abort(404)
+}
 
-	// If the target is explicitly marked as something we read from
-	// (e.g., the by-convention read-from pipe), reverse the edge's direction.
-	let source = graph.nodes(`[id="${data.source}"]`);
-	let target = graph.nodes(`[id="${data.target}"]`);
-
-	if (source.data() && source.data().type == 'process'
-		&& target.data() && target.data().end == 'R') {
-		let tmp = data.source;
-		data.source = data.target;
-		data.target = tmp;
-	}
-
-	graph.add({
-		classes: data.type,
-		data: data,
+function setup_machines() {
+	var session = driver.session();
+	nodes = session.run("MATCH (m:Machine) RETURN m")
+	.then(result => {return result.records.forEach(function (record) 
+		{
+			//console.log(record.get('m'));
+			var nodeData = parseNeo4jNode(record.get('m'));
+			add_node(nodeData, machineGraph);
+		});
 	});
+	edges = session.run("MATCH (:Machine)-[e]->(:Machine) RETURN DISTINCT e")
+	.then(result => {return result.records.forEach(function (record) 
+		{
+			//console.log(record.get('e'));
+			var temp = record.get('e');
+			machineGraph.add([
+				{ group: "edges", data: {
+					id: temp['identity']['low'],
+					source: temp['start']['low'], 
+					target: temp['end']['low']}}
+			])
+		});
+		session.close();
+	});
+	layout( machineGraph, 'cose');
 }
+
 
 //the int one
 function get_neighbours_id(id, files=true, sockets=true, pipes=true, process_meta=true){
@@ -681,26 +972,6 @@ function get_neighbours_uuid(uuid, files=True, sockets=True, pipes=True, process
 	var root_node = {res[0]['s']} if len(res) else set();
 	return flask.jsonify({'nodes': {row['d'] for row in res} | root_node,
 						  'edges': {row['e'] for row in res}});
-}
-
-//
-// Fetch neighbours to a node, based on some user-specified filters.
-//
-function get_neighbours(id, fn, err = console.log) {
-	return get_neighbours_id(id,
-							files = $('#inspectFiles').is(':checked'),
-							sockets = $('#inspectSockets').is(':checked'),
-							pipes = $('#inspectPipes').is(':checked'),
-							process_meta = $('#inspectProcessMeta').is(':checked'));
-
-	//**********old code
-	// const query =
-	// 	`files=${$('#inspectFiles').is(':checked')}` +
-	// 	`&sockets=${$('#inspectSockets').is(':checked')}` +
-	// 	`&pipes=${$('#inspectPipes').is(':checked')}` +
-	// 	`&process_meta=${$('#inspectProcessMeta').is(':checked')}`;
-
-	// return $.getJSON(`neighbours/${id}?${query}`, fn).fail(err);
 }
 
 function successors_query(dbid, max_depth='4', files=true, sockets=true, pipes=true, process_meta=true){
@@ -823,101 +1094,6 @@ function successors_query(dbid, max_depth='4', files=true, sockets=true, pipes=t
 						  'edges': edges});
 }
 
-//
-// Fetch successors to a node, based on some user-specified filters.
-//
-function get_successors(id, fn, err = console.log) {
-	return successors_query(id,
-					max_depth = 100,
-					files = $('#inspectFiles').is(':checked'),
-					sockets = $('#inspectSockets').is(':checked'),
-					pipes = $('#inspectPipes').is(':checked'),
-					process_meta = $('#inspectProcessMeta').is(':checked'));
-
-//********old code
-	// const query =
-	// 	`files=${$('#inspectFiles').is(':checked')}` +
-	// 	`&sockets=${$('#inspectSockets').is(':checked')}` +
-	// 	`&pipes=${$('#inspectPipes').is(':checked')}` +
-	// 	`&process_meta=${$('#inspectProcessMeta').is(':checked')}` +
-	// 	`&max_depth=100`;
-
-	// return $.getJSON(`successors/${id}?${query}`, fn).fail(err);
-}
-
-//
-// How to import a node into the worksheet
-//
-function import_into_worksheet(id, err = console.log) {
-	let graph = worksheetGraph.graph;
-
-	// Have we already imported this node?
-	if (!graph.getElementById(id).empty()) {
-		return $.when(null);
-	}
-
-	let position = {
-		x: graph.width() / 2,
-		y: graph.height() / 2,
-	};
-
-	//TODO: make worksheet detail func first then use it here check if it is the right one
-	return $.getJSON(`detail/${id}`, function(result) {
-		let promise = null;
-
-		if ('parent' in result && graph.nodes(`[id="${result.parent}"]`).empty()) {
-			promise = import_into_worksheet(result.parent);
-		} else {
-			promise = $.when(null);
-		}
-
-		promise.then(function() {
-			add_node(result, graph, position);
-		}).then(function() {
-			get_neighbours(id, function(result) {
-				let elements = graph.elements();
-				let node = graph.nodes(`[id="${id}"]`);
-
-				for (let edge of result.edges) {
-					let other = null;
-					if (edge.source == id) {
-						other = elements.nodes(`#${edge.target}`);
-					} else if (edge.target == id) {
-						other = elements.nodes(`#${edge.source}`);
-					}
-
-					if (!other.empty()) {
-						add_edge(edge, graph);
-					}
-				}
-			});
-		}).fail(err).then(function(){
-			// ******old cxt menu
-			//attach_context_menu(graph, '#worksheet', worksheet_context_items);
-		});
-	});
-}
-
-function inspect_and_import(id) {
-	import_into_worksheet(id);
-	inspect_node(id);
-}
-
-//
-// Add a node and all of its neighbours to the worksheet.
-//
-function import_neighbours_into_worksheet(id) {
-	// Get all of the node's neighbours:
-	get_neighbours(id, function(result) {
-		let promise = $.when(null);
-
-		for (let n of result.nodes) {
-			promise.then(function() { import_into_worksheet(n.id); });
-		}
-	});
-}
-
-
 function get_detail_id(identifier){
 	var session = driver.session();
 	query = session.run(`MATCH (n) WHERE id(n)=${identifier} RETURN n`);
@@ -937,104 +1113,6 @@ function get_detail_uuid(**kwargs){
 	}
 	return flask.jsonify(query['n'])
 }
-
-//
-// Define what it means to "inspect" a node.
-//
-function inspect_node(id, err = console.log) {
-	// Display the node's details in the inspector "Details" panel.
-	var inspectee;
-
-	inspector.detail.empty();
-	inspector.neighbours.empty();
-
-
-
-
-	$.getJSON(`detail/${id}`, function(result) {
-		for (let property in result) {
-			inspector.detail.append(`
-				<tr>
-					<th>${property}</th>
-					<td>${result[property]}</td>
-				</tr>
-			`)
-		}
-		inspectee = result
-	}).fail(err).then(function() {
-		// Display the node's immediate connections in the inspector "Graph" panel.
-		get_neighbours(id, function(result) {
-			inspector.graph.remove('node');
-
-			add_node(inspectee, inspector.graph);
-
-			for (let n of result.nodes) {
-				add_node(n, inspector.graph);
-
-				let meta = graphing.node_metadata(n);
-				inspector.neighbours.append(`
-					<tr>
-						<td><a onclick="import_into_worksheet(${n.id})" style="color: black;"><i class="fa fa-${meta.icon}" aria-hidden="true"></i></a></td>
-						<td><a onclick="import_into_worksheet(${n.id})">${meta.label}</a></td>
-					</tr>
-				`);
-			}
-
-			for (let e of result.edges) {
-				add_edge(e, inspector.graph);
-			}
-
-			let n = inspector.graph.elements().nodes(`[id="${id}"]`);
-			if (n.empty()) {
-				n = inspector.graph.elements().nodes(`[uuid="${id}"]`);
-			}
-			inspector.graph.inspectee = n;
-
-			// Only use the (somewhat expensive) dagre algorithm when the number of
-			// edges is small enough to be computationally zippy.
-			if (result.edges.length < 100) {
-				layout(inspector.graph, 'dagre');
-			} else {
-				layout(inspector.graph, 'cose');
-			}
-
-			inspector.graph.zoom({
-				level: 1,
-				position: inspector.graph.inspectee.position(),
-			});
-		});
-	});
-}
-
-//
-// Define what it means to show "successors" to a node.
-//
-function successors(id) {
-	let graph = worksheetGraph.graph;
-
-	// Display the node's details in the inspector "Details" panel.
-	get_successors(id, function(result) {
-
-		let position = {
-			x: graph.width() / 2,
-			y: graph.height() / 2,
-		};
-
-		for (let n of result.nodes) {
-			add_node(n, graph, position);
-		}
-
-		let elements = graph.elements();
-		for (let e of result.edges) {
-			add_edge(e, graph);
-		}
-		//
-		//***** old cxt menus
-		//
-		//attach_context_menu(graph, '#worksheet', worksheet_context_items);
-	});
-}
-
 
 function get_nodes(node_type=null, name=null, host=null, local_ip=null, local_port=null,
 			  remote_ip=null, remote_port=null, limit='100'){
@@ -1170,79 +1248,8 @@ function get_nodes(node_type=null, name=null, host=null, local_ip=null, local_po
 	return flask.jsonify([row['n'] for row in query.data()])
 }
 
-//
-// Populate node list.
-//
-function update_nodelist(err = console.log) {
-	let query = {
-		node_type: $('#filterNodeType').val(),
-		name: $('#filterName').val(),
-		host: $('#filterHost').val(),
-		local_ip: $('#filterLocalIp').val(),
-		local_port: $('#filterLocalPort').val(),
-		remote_ip: $('#filterRemoteIp').val(),
-		remote_port: $('#filterRemotePort').val(),
-	};
 
-
-	$.getJSON('nodes', query, function(result) {
-		let nodelist = $('#nodelist');
-		nodelist.empty();
-
-		let current_uuid = null;
-		let colour = 0;
-
-		for (let node of result) {
-			let meta = graphing.node_metadata(node);
-
-			if (node.uuid != current_uuid) {
-				colour += 1;
-				current_uuid = node.uuid;
-			}
-
-			nodelist.append(`
-				<tr class="${rowColour(colour)}">
-					<td><a onclick="inspect_node(${node.id})" style="color: black;"><i class="fa fa-${meta.icon}" aria-hidden="true"></i></a></td>
-					<td>${meta.timestamp}</td>
-					<td><a onclick="inspect_node(${node.id})">${meta.label}</a></td>
-				</tr>`);
-		}
-	}).fail(err);
-}
-
-
-function rowColour(n) {
-	switch (n % 6) {
-	case 1:
-		return 'active';
-	case 2:
-		return 'info';
-	case 3:
-		return '';
-	case 4:
-		return 'warning';
-	case 5:
-		return 'active';
-	case 0:
-		return 'success';
-	}
-}
-
-/*********************************************************************************/
-
-function openPage(pageId){
-	$('#machinePage').css('display', 'none');
-	$('#notificationPage').css('display', 'none');
-	$('#worksheetPage').css('display', 'none');
-	$(pageId).css('display', 'block');
-}
-
-function refreshGraph(graphId){
-	$(graphId).css('height', '99%');
-	$(graphId).css('height', '100%');
-}
-
-//Functions end
+//Queries end
 
 //Button logic
 
