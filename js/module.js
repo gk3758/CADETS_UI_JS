@@ -286,7 +286,7 @@ function add_edge(data, graph) {
 //
 // Fetch neighbours to a node, based on some user-specified filters.
 //
-function get_neighbours(id, fn, err = console.log) {
+function get_neighbours(id, fn) {
 	return get_neighbours_id(id,
 							files = $('#inspectFiles').is(':checked'),
 							sockets = $('#inspectSockets').is(':checked'),
@@ -327,7 +327,10 @@ function import_into_worksheet(id, err = console.log) {
 	};
 
 	//TODO: make worksheet detail func first then use it here check if it is the right one
-	return $.getJSON(`detail/${id}`, function(result) {
+	//return $.getJSON(`detail/${id}`, function(result) {
+		console.log("test1");
+	get_detail_id(id, function(result) {
+		console.log("test2");
 		let promise = null;
 
 		if ('parent' in result && graph.nodes(`[id="${result.parent}"]`).empty()) {
@@ -356,11 +359,10 @@ function import_into_worksheet(id, err = console.log) {
 					}
 				}
 			});
-		}).fail(err).then(function(){
-			// ******old cxt menu
-			//attach_context_menu(graph, '#worksheet', worksheet_context_items);
 		});
+		console.log("test3");
 	});
+		console.log("test4");
 }
 
 function inspect_and_import(id) {
@@ -374,6 +376,7 @@ function inspect_and_import(id) {
 function import_neighbours_into_worksheet(id) {
 	// Get all of the node's neighbours:
 	get_neighbours(id, function(result) {
+		console.log("wwwwww");
 		let promise = $.when(null);
 
 		for (let n of result.nodes) {
@@ -394,7 +397,8 @@ function inspect_node(id, err = console.log) {
 
 
 	//TODO: replace Driver
-	$.getJSON(`detail/${id}`, function(result) {
+	//$.getJSON(`detail/${id}`, function(result) {
+	get_detail_id(id, function(result) {
 		for (let property in result) {
 			inspector.detail.append(`
 				<tr>
@@ -404,7 +408,7 @@ function inspect_node(id, err = console.log) {
 			`)
 		}
 		inspectee = result
-	}).fail(err).then(function() {
+	}).then(function() {
 		// Display the node's immediate connections in the inspector "Graph" panel.
 		get_neighbours(id, function(result) {
 			inspector.graph.remove('node');
@@ -646,7 +650,6 @@ function parseNeo4jNode(o){
 	// // (database ID if we don't have a UUID)
 	// unique = o['uuid'] if 'uuid' in o else str(o.id);
 	// data['hash'] = short_hash(unique);
-
 	return data;
 }
 
@@ -796,7 +799,7 @@ function get_neighbours_id(id, files=true, sockets=true, pipes=true, process_met
 	if (process_meta){
 		matchers = matchers.concat('Meta');
 	}
-	session.run(`MATCH (s)-[e]-(d)
+	return session.run(`MATCH (s)-[e]-(d)
 				WHERE id(s) = ${id}
 				AND NOT
 				(
@@ -857,62 +860,61 @@ function get_neighbours_id(id, files=true, sockets=true, pipes=true, process_met
 				}
 			});
 		}
-		for(row in neighbours){
+		for(row in neighbours){//maybe cause issues where it is not inside then
 			neighbour_nodes = neighbour_nodes.concat(parseNeo4jNode(neighbours[row].get('d')));
 			neighbour_edges = neighbour_edges.concat(parseNeo4jEdge(neighbours[row].get('e')));
 		}
 		session.close();
-		console.log(neighbour_nodes);
 		return ({nodes: neighbour_nodes,
 				edges: neighbour_edges});
 	});
 }
 
-//the string one
-function get_neighbours_uuid(uuid, files=True, sockets=True, pipes=True, process_meta=True){
-	var matchers = ['Machine', 'Process', 'Conn'];
-	if (files){
-		matchers.add('File');
-	}
-	if (sockets){
-		matchers.add('Socket');
-	}
-	if (pipes){
-		matchers.add('Pipe');
-	}
-	if (files && sockets && pipes){
-		matchers.add('Global');
-	}
-	if (process_meta){
-		matchers.add('Meta');
-	}
+// //the string one
+// function get_neighbours_uuid(uuid, files=True, sockets=True, pipes=True, process_meta=True){
+// 	var matchers = ['Machine', 'Process', 'Conn'];
+// 	if (files){
+// 		matchers.add('File');
+// 	}
+// 	if (sockets){
+// 		matchers.add('Socket');
+// 	}
+// 	if (pipes){
+// 		matchers.add('Pipe');
+// 	}
+// 	if (files && sockets && pipes){
+// 		matchers.add('Global');
+// 	}
+// 	if (process_meta){
+// 		matchers.add('Meta');
+// 	}
 
-	var session = driver.session();
-	var res = session.run(`MATCH (s)-[e]-(d)
-						WHERE
-						exists(s.uuid)
-						AND 
-						(
-							NOT d:Pipe
-							OR
-							d.fds <> []
-						)
-						AND
-						s.uuid=${uuid}
-						AND
-						any(lab in labels(d) WHERE lab IN ${list(matchers)})
-						RETURN s, e, d`);
+// 	var session = driver.session();
+// 	var res = session.run(`MATCH (s)-[e]-(d)
+// 						WHERE
+// 						exists(s.uuid)
+// 						AND 
+// 						(
+// 							NOT d:Pipe
+// 							OR
+// 							d.fds <> []
+// 						)
+// 						AND
+// 						s.uuid=${uuid}
+// 						AND
+// 						any(lab in labels(d) WHERE lab IN ${list(matchers)})
+// 						RETURN s, e, d`);
 
-	if(res.length){
-		var root_node = res[0]['s'];
-	}
-	else{
-		var root_node = set();
-	}
-	//var root_node = {res[0]['s']} if len(res) else set();
-	// return flask.jsonify({'nodes': {row['d'] for row in res} | root_node,
-	// 					  'edges': {row['e'] for row in res}});
-}
+// 	if(res.length){
+// 		var root_node = res[0]['s'];
+// 	}
+// 	else{
+// 		var root_node = set();
+// 	}
+// 	//var root_node = {res[0]['s']} if len(res) else set();
+// 	// return flask.jsonify({'nodes': {row['d'] for row in res} | root_node,
+// 	// 					  'edges': {row['e'] for row in res}});
+// }
 
 function successors_query(dbid, max_depth='4', files=true, sockets=true, pipes=true, process_meta=true){
 	max_depth = int(max_depth);
@@ -1037,13 +1039,17 @@ function successors_query(dbid, max_depth='4', files=true, sockets=true, pipes=t
 						  'edges': edges});
 }
 
-function get_detail_id(identifier){
+function get_detail_id(id){
 	var session = driver.session();
-	query = session.run(`MATCH (n) WHERE id(n)=${identifier} RETURN n`);
-	if (query == null){
-		console.log(404);
-	}
-	return flask.jsonify(query['n'])
+	return session.run(`MATCH (n) WHERE id(n)=${id} RETURN n`)
+	.then(result => {
+		if (result == null){
+			console.log(404);
+		}
+		session.close();
+		return(parseNeo4jNode(result.records[0].get('n')));
+	});
+	//return flask.jsonify(query['n'])
 }
 
 // function get_detail_uuid(**kwargs){
