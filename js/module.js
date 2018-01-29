@@ -143,105 +143,9 @@ setup_machines();
 
 //inspector Graph
 
+
 var inspectorGraph = cytoscape({
 	container: document.getElementById('inspectorGraph'),
-	elements: [
-	{ data: { id: 'EN-1020', name: 'Introduction to Programming' } },
-	{ data: { id: 'EN-1040', name: 'Mechanisms and Electric Circuits' } },
-	{ data: { id: 'EN-3861', name: 'Digital Logic' } },
-	{ data: { id: 'EN-3891', name: 'Foundations of Programming' } },
-	{ data: { id: 'EN-4862', name: 'Microprocessors' } },
-	{ data: { id: 'EN-4892', name: 'Data Structures' } },
-	{ data: { id: 'EN-5865', name: 'Digital Systems' } },
-	{ data: { id: 'EN-5895', name: 'Software Design' } },
-	{ data: { id: 'EN-6861', name: 'Computer Architecture' } },
-	{ data: { id: 'EN-6892', name: 'Algorithms: Complexity and Correctness' } },
-	{ data: { id: 'EN-7894', name: 'Concurrent Programming' } },
-	{ data: { id: 'EN-8894', name: 'Real-time Operating Systems' } },
-	{
-		data: {
-			id: '1020-3891',
-			source: 'EN-1020',
-			target: 'EN-3891'
-		}
-	},
-	{
-		data: {
-			id: '1040-3861',
-			source: 'EN-1040',
-			target: 'EN-3861'
-		}
-	},
-	{
-		data: {
-			id: '3861-4862',
-			source: 'EN-3861',
-			target: 'EN-4862'
-		}
-	},
-	{
-		data: {
-			id: '3891-4892',
-			source: 'EN-3891',
-			target: 'EN-4892'
-		}
-	},
-	{
-		data: {
-			id: '3891-5865',
-			source: 'EN-3891',
-			target: 'EN-5865'
-		}
-	},
-	{
-		data: {
-			id: '4862-5865',
-			source: 'EN-4862',
-			target: 'EN-5865'
-		}
-	},
-	{
-		data: {
-			id: '4892-5895',
-			source: 'EN-4892',
-			target: 'EN-5895'
-		}
-	},
-	{
-		data: {
-			id: '5865-6861',
-			source: 'EN-5865',
-			target: 'EN-6861'
-		}
-	},
-	{
-		data: {
-			id: '5895-6892',
-			source: 'EN-5895',
-			target: 'EN-6892'
-		}
-	},
-	{
-		data: {
-			id: '6861-7894',
-			source: 'EN-6861',
-			target: 'EN-7894'
-		}
-	},
-	{
-		data: {
-			id: '6892-7894',
-			source: 'EN-6892',
-			target: 'EN-7894'
-		}
-	},
-	{
-		data: {
-			id: '7894-8894',
-			source: 'EN-7894',
-			target: 'EN-8894'
-		}
-	}],
 	style: cytoscape.stylesheet()
 	.selector('node')
 	.css({
@@ -261,7 +165,6 @@ var inspectorGraph = cytoscape({
 		'width': 1
 	})
 });
-
 
 var inspector = {
 	detail: $('#inspector-detail'),
@@ -307,7 +210,8 @@ layout( inspectorGraph, 'cose');
 //inspector Graph end
 
 //run
-update_nodelist();
+	insector_query('552408');
+//update_nodelist();
 //run end
 
 //Functions
@@ -664,29 +568,29 @@ function parseNeo4jNode(o){
 	var data = {'id': o['identity']['low']};
 	var labels = o['labels'];
 	if (labels.indexOf('Socket') > -1){
-		data.add({'type': "socket-version",
-					'names': o['properties']['name'],
-					'creation': o['properties']['timestamp']['low']});
-		//data.update(o.properties);
+		data.type = "socket-version";
+		data.names = o['properties']['name'];
+		data.creation = o['properties']['timestamp']['low'];
+		data.properties = o[properties];
 	}
 	else if (labels.indexOf('Pipe') > -1){
-		data.add({'type': "pipe-endpoint",
-					'creation': o['properties']['timestamp']['low']});
-		//data.update(o.properties);
+		data.type = "pipe-endpoint";
+		data.creation = o['properties']['timestamp']['low'];
+		data.properties = o[properties];
 	}
-	// else if (labels.indexOf('Process') > -1) in labels{
-	// 	data.update({'type': "process",
-	// 				'uuid': o['uuid'],
-	// 				'host': o['host'],
-	// 				'pid': o['pid'],
-	// 				'username': o['meta_login'] if 'meta_login' in o else None,
-	// 				'cmdline': o['cmdline'] if o['cmdline'] else None,
-	// 				'last_update': o['meta_ts'],
-	// 				'saw_creation': not o['anomalous']});
-	// 	data.update({k: o['meta_%s' % k] if ('meta_%s' % k) in o else None
-	// 		for k in ['uid', 'euid', 'ruid', 'suid',
-	// 		'gid', 'egid', 'rgid', 'sgid']});
-	// }
+	else if (labels.indexOf('Process') > -1){
+		data.type = "process";
+		data.uuid = o['uuid'];
+		data.host = o['host'];
+		data.pid = o['pid'];
+		data.username = o['meta_login'];
+		data.cmdline = o['cmdline'];
+		data.last_update = o['meta_ts'];
+		data.saw_creation = !o['anomalous'];
+		for(k in ['uid', 'euid', 'ruid', 'suid', 'gid', 'egid', 'rgid', 'sgid']){
+			data.k = o[`meta_${k}`];
+		}
+	}
 	else if (labels.indexOf('Machine') > -1){
 		data.type = "machine";
 		data.uuid = o['properties']['uuid'];
@@ -695,31 +599,36 @@ function parseNeo4jNode(o){
 		data.first_seen = o['properties']['timestamp']['low'];
 		data.external = o['properties']['external'];
 	} 
-	// else if 'Meta' in labels{
-	// 	data.update({'type': "process-meta"});
-	// 	data.update(o.properties);
-	// }
-	// else if 'Conn' in labels{
-	// 	data.update(o.properties);
-	// 	data['ctype'] = data['type'] if 'type' in data else 'TCP';
-	// 	if data['ctype'] == 'TCP'{
-	// 		data['endpoints'] = [data['client_ip'] + ":" + data['client_port'],
-	// 							data['server_ip'] + ":" + data['server_port']];
-	// 	}
-	// 	else if data['ctype'] == 'Pipe'{
-	// 		data['endpoints'] = ['wrpipe: ' + short_hash(data['wrpipe']),
-	// 							'rdpipe: ' + short_hash(data['rdpipe'])];
-	// 	}
-	// 	data.update({'type': "connection"});
-	// }
-	// else{
-	// 	data.update({'type': "file-version",
-	// 				'uuid': o['uuid'],
-	// 				'host': o['host'],
-	// 				'names': o['name'],
-	// 				'creation': o['timestamp'],
-	// 				'saw_creation': not o['anomalous']});
-	// }
+	else if (labels.indexOf('Meta') > -1){
+		data.type = "process-meta";
+		data.properties = o[properties];
+	}
+	else if 'Conn' in labels{
+		data.properties = o[properties];
+		if(data['type'] != null){
+			data['ctype'] = data['type'];
+		} 
+		else{
+			data['ctype'] =  'TCP';
+		}
+		if (data['ctype'] == 'TCP'){
+			data['endpoints'] = [data['client_ip'] + ":" + data['client_port'],
+								data['server_ip'] + ":" + data['server_port']];
+		}
+		else if (data['ctype'] == 'Pipe'){
+			data['endpoints'] = ['wrpipe: ' + short_hash(data['wrpipe']),
+								'rdpipe: ' + short_hash(data['rdpipe'])];
+		}
+		data.type= "connection";
+	}
+	 else{
+		data.type = "file-version";
+		data.uuid = o['uuid'];
+		data.host = o['host'];
+		data.names = o['name'];
+		data.creation = o['timestamp'];
+		data.saw_creation = !o['anomalous'];
+	}
 	// if 'host' in o and o['host'] in self.machines{
 	// 	(i, name) = self.machines[o['host']];
 	// 	data.update({'hostname': name, 'parent': i});
@@ -740,47 +649,67 @@ function parseNeo4jEdge(o){
 	type_map.GLOB_OBJ_PREV = 'file-change';
 	type_map.COMM = 'comm';
 	var type = o['type'];
-	// state = o['state'] if 'state' in o else None
-	// if state is not None{
-	// 	if state == "NONE"{
-	// 		state = None
-	// 	}
-	// 	else if state == "RaW"{
-	// 		state = ['READ', 'WRITE']
-	// 	}
-	// 	else if state in ['CLIENT', 'SERVER']{
-	// 		state = [state, 'READ', 'WRITE']
-	// 	}
-	// 	else if state == "BIN"{
-	// 		state = [state, 'READ']
-	// 	}
-	// 	else{
-	// 		state = [state]
-	// 	}
-	// }
-	// if state is not None and 'WRITE' not in state{
-	// 	src = o.start
-	// 	dst = o.end
-	// }
-	// if type == 'COMM'{
-	// 	src = o['start']['low'];
-	// 	dst = o['end']['low'];
-	// }
-	// else{
-	// 	src = o.end
-	// 	dst = o.start
-	// }
+	var state;
+	var src;
+	var dst;
+	if (o.indexOf('state') > -1){
+		state = o['state'];
+	} else{
+		state = null;
+	}
+	if (state != null){
+		if (state == "NONE"){
+			state = null;
+		}
+		else if (state == "RaW"){
+			state = ['READ', 'WRITE'];
+		}
+		else if ((state.indexOf('CLIENT') > -1) || (state.indexOf('SERVER') > -1)){
+			state = [state, 'READ', 'WRITE'];
+		}
+		else if (state == "BIN"){
+			state = [state, 'READ'];
+		}
+		else{
+			state = [state];
+		}
+	}
+	if (state != null && (state.indexOf('WRITE') <= -1)){
+		src = o.start;
+		dst = o.end;
+	}
+	if (type == 'COMM'){
+		src = o['start']['low'];
+		dst = o['end']['low'];
+	}
+	else{
+		src = o.end;
+		dst = o.start;
+	}
 
-	// return dict({'source': src,
-	// 			'target': dst,
-	// 			'id': o['identity']['low']},
-	// 			'type': type_map[type],
-	// 			'state': state});
+	return {'source': src,
+				'target': dst,
+				'id': o['identity']['low'],
+				'type': type_map[type],
+				'state': state};
 }
 
 //Parser end
 
 //Queries
+
+
+function insector_query(id){
+	var session = driver.session();
+	session.run(`MATCH (p:Process) WHERE id(p) = ${id} RETURN p`)
+	.then(result => {return result.records.forEach(function (record) 
+		{
+			var nodeData = parseNeo4jNode(record.get('p'));
+			add_node(nodeData, inspectorGraph);
+		});
+		session.close();
+	});
+}
 
 function cmd_query(id){
 	var session = driver.session();
@@ -807,16 +736,16 @@ function file_read_query(id){
 
 function setup_machines() {
 	var session = driver.session();
-	nodes = session.run("MATCH (m:Machine) RETURN m")
-	.then(result => {return result.records.forEach(function (record) 
+	session.run("MATCH (m:Machine) RETURN m")
+	.then(result => {result.records.forEach(function (record) 
 		{
 			//console.log(record.get('m'));
 			var nodeData = parseNeo4jNode(record.get('m'));
 			add_node(nodeData, machineGraph);
 		});
 	});
-	edges = session.run("MATCH (:Machine)-[e]->(:Machine) RETURN DISTINCT e")
-	.then(result => {return result.records.forEach(function (record) 
+	session.run("MATCH (:Machine)-[e]->(:Machine) RETURN DISTINCT e")
+	.then(result => {result.records.forEach(function (record) 
 		{
 			//console.log(record.get('e'));
 			var temp = record.get('e');
@@ -850,71 +779,94 @@ function get_neighbours_id(id, files=true, sockets=true, pipes=true, process_met
 	if (process_meta){
 		matchers.add('Meta');
 	}
-
 	var session = driver.session();
-	var neighbours = session.run(`MATCH (s)-[e]-(d)
-								WHERE id(s)=${id}
-								AND NOT
-								(
-									"Machine" in labels(s)
-									AND
-									"Machine" in labels(d)
-								)
-								AND
-								(
-									NOT d:Pipe
-									OR
-									d.fds <> []
-								)
-								AND
-								any(lab in labels(d) WHERE lab IN ${list(matchers)})
-								RETURN s, e, d`);
-	if (neighbours.length){
-		var root_node = [neighbours[0]['s']];
-	} else {
-		var root_node = [];
-	}
-	if (sockets){
-		var m_qry = session.run(`MATCH (skt:Socket), (mch:Machine)
-								WHERE 
-								mch.external
-								AND 
-								id(skt)=${id}
-								AND 
-								split(skt.name[0], ":")[0] in mch.ips
-								RETURN skt, mch
-								UNION
-								MATCH (skt:Socket), (mch:Machine)
-								WHERE 
-								mch.external
-								AND 
-								id(mch)=${id}
-								AND
-								split(skt.name[0], ":")[0] in mch.ips
-								RETURN skt, mch`);
-		for(row in m_qry){
-			var m_links = {'id': row['skt'].id + row['mch'].id};
-			m_links.source = row['skt'].id;
-			m_links.target = row['mch'].id;
-			m_links.type = 'comm';
-			m_links.state = null; 
-			if(row['mch'] == null){
-				var m_nodes = row['skt'];
-			}
-			else{
-				var m_nodes = row['mch'];
-			}
-			//var m_nodes = row['mch'] == null ? row['skt'] : row['mch'];
-		}//for row in m_qry]
-		
-
-	}
-	else{
-		var m_links = [];
-		var m_nodes = set();
-	}
-	// return flask.jsonify({'nodes': {row['d'] for row in neighbours} | m_nodes | root_node,
-	// 					  'edges': list({row['e'] for row in neighbours}) + m_links})
+	var neighbours;
+	var root_node;
+	var m_links;
+	var m_nodes;
+	var m_qry;
+	session.run(`MATCH (s)-[e]-(d)
+				WHERE id(s) = ${id}
+				AND NOT
+				(
+					"Machine" in labels(s)
+					AND
+					"Machine" in labels(d)
+				)
+				AND
+				(
+					NOT d:Pipe
+					OR
+					d.fds <> []
+				)
+				RETURN s, e, d`)
+	//AND
+	// any(lab in labels(d) WHERE lab IN ${matchers})
+	.then(result => {
+		//var nodeData = parseNeo4jNode(record.get('s'));
+		neighbours = result.records;
+		if (neighbours.length){
+			root_node = neighbours[0].get('s');
+		} else {
+			root_node = [];
+		}
+		if (sockets){
+			session.run(`MATCH (skt:Socket), (mch:Machine)
+						WHERE 
+						mch.external
+						AND 
+						id(skt)=${id}
+						AND 
+						split(skt.name[0], ":")[0] in mch.ips
+						RETURN skt, mch
+						UNION
+						MATCH (skt:Socket), (mch:Machine)
+						WHERE 
+						mch.external
+						AND 
+						id(mch)=${id}
+						AND
+						split(skt.name[0], ":")[0] in mch.ips
+						RETURN skt, mch`)
+			.then(result => {
+				m_qry = result;
+				var i = 0;
+				for(row in m_qry){
+					m_links[i].id = (row['skt'].id + row['mch'].id);
+					m_links[i].source = row['skt'].id;
+					m_links[i].target = row['mch'].id;
+					m_links[i].type = 'comm';
+					m_links[i].state = null; 
+					if(row['mch'] == null){
+						m_nodes[i] = row['skt'];
+					}
+					else{
+						m_nodes[i] = row['mch'];
+					}
+					i++;
+				}
+			});
+		}
+		else{
+			m_links = [];
+			m_nodes = [];
+		}
+		var neighbour_nodes = [];
+		var neighbour_edges = [];
+		for(row in neighbours){
+			//console.log(neighbours[row].get('d'));
+			neighbour_nodes = neighbour_nodes.concat(neighbours[row].get('d'));
+			neighbour_edges = neighbour_edges.concat(neighbours[row].get('e'));
+		}
+		neighbour_nodes = neighbour_nodes.concat(root_node);
+		//neighbour_edges = neighbour_edges.concat(m_links);
+		console.log(neighbour_nodes);
+		session.close();
+		return ({nodes: neighbour_nodes,
+				edges: neighbour_edges});
+		// return flask.jsonify({'nodes': {row['d'] for row in neighbours} | m_nodes | root_node,
+		// 					  'edges': list({row['e'] for row in neighbours}) + m_links})
+	});
 }
 
 //the string one
@@ -1294,7 +1246,7 @@ document.getElementById("saveGraph").onclick = function () {
 };
 
 //layout from graphing.js
-document.getElementById("reDagre").onclick = function () { 
+document.getElementById("reDagre").onclick = function () {
 	//worksheetGraph.graph.cxtmenu(worksheetCxtMenu);
 	//layout( worksheetGraph.graph, 'cose'); //TODO: get cDagre online
 };
