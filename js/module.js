@@ -567,29 +567,33 @@ function refreshGraph(graphId){
 function parseNeo4jNode(o){
 	var data = {'id': o['identity']['low']};
 	var labels = o['labels'];
-	if (labels.indexOf('Socket') > -1){
+	if (labels.indexOf('Socket') > -1){//TODO: test socket
 		data.type = "socket-version";
 		data.names = o['properties']['name'];
 		data.creation = o['properties']['timestamp']['low'];
 		data.properties = o[properties];
 	}
-	else if (labels.indexOf('Pipe') > -1){
+	else if (labels.indexOf('Pipe') > -1){//TODO: test pipe
 		data.type = "pipe-endpoint";
 		data.creation = o['properties']['timestamp']['low'];
 		data.properties = o[properties];
 	}
 	else if (labels.indexOf('Process') > -1){
 		data.type = "process";
-		data.uuid = o['uuid'];
-		data.host = o['host'];
-		data.pid = o['pid'];
-		data.username = o['meta_login'];
-		data.cmdline = o['cmdline'];
-		data.last_update = o['meta_ts'];
-		data.saw_creation = !o['anomalous'];
-		for(k in ['uid', 'euid', 'ruid', 'suid', 'gid', 'egid', 'rgid', 'sgid']){
-			data.k = o[`meta_${k}`];
-		}
+		data.saw_creation = !o['properties']['anomalous'];
+		data.cmdline = o['properties']['cmdline'];
+		data.host = o['properties']['host'];
+		data.egid = o['properties'][`meta_egid`];
+		data.euid = o['properties'][`meta_euid`];
+		data.gid = o['properties'][`meta_gid`];
+		data.login = o['properties'][`meta_login`];
+		data.ts = o['properties'][`meta_ts`]['low'];
+		data.uid = o['properties'][`meta_uid`];
+		data.pid = o['properties']['pid'];
+		data.uuid = o['properties']['uuid'];
+		data.status = o['properties']['status'];
+		data.timestamp = o['properties']['timestamp'];
+		data.thin = o['properties']['thin'];
 	}
 	else if (labels.indexOf('Machine') > -1){
 		data.type = "machine";
@@ -601,9 +605,14 @@ function parseNeo4jNode(o){
 	} 
 	else if (labels.indexOf('Meta') > -1){
 		data.type = "process-meta";
-		data.properties = o[properties];
+		data.egid = o['properties'][`meta_egid`];
+		data.euid = o['properties'][`meta_euid`];
+		data.gid = o['properties'][`meta_gid`];
+		data.login = o['properties'][`meta_login`];
+		data.ts = o['properties'][`meta_ts`]['low'];
+		data.uid = o['properties'][`meta_uid`];
 	}
-	else if 'Conn' in labels{
+	else if (labels.indexOf('Conn') > -1){//TODO: test conn
 		data.properties = o[properties];
 		if(data['type'] != null){
 			data['ctype'] = data['type'];
@@ -623,11 +632,11 @@ function parseNeo4jNode(o){
 	}
 	 else{
 		data.type = "file-version";
-		data.uuid = o['uuid'];
-		data.host = o['host'];
-		data.names = o['name'];
-		data.creation = o['timestamp'];
-		data.saw_creation = !o['anomalous'];
+		data.uuid = o['properties']['uuid'];
+		data.host = o['properties']['host'];
+		data.names = o['properties']['name'];
+		data.creation = o['properties']['timestamp'];
+		data.saw_creation = !o['properties']['anomalous'];
 	}
 	// if 'host' in o and o['host'] in self.machines{
 	// 	(i, name) = self.machines[o['host']];
@@ -642,18 +651,18 @@ function parseNeo4jNode(o){
 }
 
 function parseNeo4jEdge(o){
+	var id = o['identity']['low'];
 	var type_map = {'PROC_PARENT': 'parent'};
 	type_map.PROC_OBJ = 'io';
 	type_map.META_PREV = 'proc-metadata';
 	type_map.PROC_OBJ_PREV = 'proc-change';
 	type_map.GLOB_OBJ_PREV = 'file-change';
 	type_map.COMM = 'comm';
-	var type = o['type'];
 	var state;
 	var src;
 	var dst;
-	if (o.indexOf('state') > -1){
-		state = o['state'];
+	if (o['properties']['state'] != null){
+		state = o['properties']['state'];
 	} else{
 		state = null;
 	}
@@ -678,7 +687,7 @@ function parseNeo4jEdge(o){
 		src = o.start;
 		dst = o.end;
 	}
-	if (type == 'COMM'){
+	if (o['type'] == 'COMM'){
 		src = o['start']['low'];
 		dst = o['end']['low'];
 	}
@@ -689,8 +698,8 @@ function parseNeo4jEdge(o){
 
 	return {'source': src,
 				'target': dst,
-				'id': o['identity']['low'],
-				'type': type_map[type],
+				'id': id,
+				'type': type_map[o['type']],
 				'state': state};
 }
 
@@ -763,28 +772,30 @@ function setup_machines() {
 
 //the int one
 function get_neighbours_id(id, files=true, sockets=true, pipes=true, process_meta=true){
-	var matchers = ['Machine', 'Process', 'Conn'];
-	if (files){
-		matchers.add('File');
-	}
-	if (sockets){
-		matchers.add('Socket');
-	}
-	if (pipes){
-		matchers.add('Pipe');
-	}
-	if (files && sockets && pipes){
-		matchers.add('Global');
-	}
-	if (process_meta){
-		matchers.add('Meta');
-	}
 	var session = driver.session();
 	var neighbours;
 	var root_node;
 	var m_links;
 	var m_nodes;
 	var m_qry;
+	var neighbour_nodes = [];
+	var neighbour_edges = [];
+	var matchers = ["Machine", "Process", "Conn"];
+	if (files){
+		matchers = matchers.concat('File');
+	}
+	if (sockets){
+		matchers = matchers.concat('Socket');
+	}
+	if (pipes){
+		matchers = matchers.concat('Pipe');
+	}
+	if (files && sockets && pipes){
+		matchers = matchers.concat('Global');
+	}
+	if (process_meta){
+		matchers = matchers.concat('Meta');
+	}
 	session.run(`MATCH (s)-[e]-(d)
 				WHERE id(s) = ${id}
 				AND NOT
@@ -798,17 +809,16 @@ function get_neighbours_id(id, files=true, sockets=true, pipes=true, process_met
 					NOT d:Pipe
 					OR
 					d.fds <> []
-				)
+				)	
+				AND
+				any(lab in labels(d) WHERE lab IN ${JSON.stringify(matchers)})
 				RETURN s, e, d`)
-	//AND
-	// any(lab in labels(d) WHERE lab IN ${matchers})
+
 	.then(result => {
-		//var nodeData = parseNeo4jNode(record.get('s'));
 		neighbours = result.records;
 		if (neighbours.length){
 			root_node = neighbours[0].get('s');
-		} else {
-			root_node = [];
+			neighbour_nodes = neighbour_nodes.concat(parseNeo4jNode(root_node));
 		}
 		if (sockets){
 			session.run(`MATCH (skt:Socket), (mch:Machine)
@@ -830,42 +840,31 @@ function get_neighbours_id(id, files=true, sockets=true, pipes=true, process_met
 						RETURN skt, mch`)
 			.then(result => {
 				m_qry = result;
-				var i = 0;
 				for(row in m_qry){
-					m_links[i].id = (row['skt'].id + row['mch'].id);
-					m_links[i].source = row['skt'].id;
-					m_links[i].target = row['mch'].id;
-					m_links[i].type = 'comm';
-					m_links[i].state = null; 
+					m_links.id = (row['skt'].id + row['mch'].id);
+					m_links.source = row['skt'].id;
+					m_links.target = row['mch'].id;
+					m_links.type = 'comm';
+					m_links.state = null; 
 					if(row['mch'] == null){
-						m_nodes[i] = row['skt'];
+						m_nodes = row['skt'];
 					}
 					else{
-						m_nodes[i] = row['mch'];
+						m_nodes = row['mch'];
 					}
-					i++;
+					neighbour_nodes = neighbour_nodes.concat(parseNeo4jNode(m_nodes));
+					neighbour_edges = neighbour_edges.concat(parseNeo4jEdge(m_links));
 				}
 			});
 		}
-		else{
-			m_links = [];
-			m_nodes = [];
-		}
-		var neighbour_nodes = [];
-		var neighbour_edges = [];
 		for(row in neighbours){
-			//console.log(neighbours[row].get('d'));
-			neighbour_nodes = neighbour_nodes.concat(neighbours[row].get('d'));
-			neighbour_edges = neighbour_edges.concat(neighbours[row].get('e'));
+			neighbour_nodes = neighbour_nodes.concat(parseNeo4jNode(neighbours[row].get('d')));
+			neighbour_edges = neighbour_edges.concat(parseNeo4jEdge(neighbours[row].get('e')));
 		}
-		neighbour_nodes = neighbour_nodes.concat(root_node);
-		//neighbour_edges = neighbour_edges.concat(m_links);
-		console.log(neighbour_nodes);
 		session.close();
+		console.log(neighbour_nodes);
 		return ({nodes: neighbour_nodes,
 				edges: neighbour_edges});
-		// return flask.jsonify({'nodes': {row['d'] for row in neighbours} | m_nodes | root_node,
-		// 					  'edges': list({row['e'] for row in neighbours}) + m_links})
 	});
 }
 
