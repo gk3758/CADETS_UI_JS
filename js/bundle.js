@@ -134,7 +134,6 @@ testGraph.cxtmenu(
 		{
 			content: 'Files read',//TODO: get it working / test
 			select: function(ele){
-					console.log("test1");
 					var id = ele.data('id');
 					file_read_query(id, function(result){
 						let str = '';
@@ -481,9 +480,7 @@ function inspect_node(id, err = console.log) {
 			`)
 		}
 		inspectee = result;
-		console.log("sssssssss");
 	}).then(function() {
-		console.log("wwwwwwwww");
 		// Display the node's immediate connections in the inspector "Graph" panel.
 		get_neighbours(id, function(result) {
 			inspector.graph.remove('node');
@@ -1039,37 +1036,26 @@ function successors_query(dbid, max_depth=4, files=true, sockets=true, pipes=tru
 		matchers = [];
 	}
 	var process_obj;
-	var nodes = [];
-	var cur_depth;
-	var cur;
-	var neighbours;
-	console.log(dbid);
 	var session = driver.session();
-	session.run(`MATCH (n) WHERE id(n)=${dbid} RETURN n`)
-	.then(result => {
+	get_detail_id_unparsed(dbid, function(result) {
 		if (result == null){
 			console.log(404);
 		}
-		console.log(result);
-		result = result.records;
-		process_obj = result.splice(0,max_depth-1);//[(max_depth, result)];
-		while (process_obj.length){
-			cur = process_obj[0];
-			process_obj.shift();
-			cur_depth = process_obj.lenght;
-			nodes = nodes.concat(cur);
-			neighbours = [];
-			if (cur.labels.indexOf('Global') > -1){//might need to change over to async
-				neighbours = session.run(`MATCH (cur:Global)-[e]->(n:Process)
+		process_obj = result;
+		//process_obj = result.splice(0,max_depth-1);//[(max_depth, result)];
+		//while (process_obj.length){
+		//	nodes = nodes.concat(cur);
+			if (process_obj['labels'] == ('Global')){
+				session.run(`MATCH (cur:Global)-[e]->(n:Process)
 										WHERE
-										id(cur)=${cur.id}
+										id(cur)=${dbid}
 										AND
 										e.state in ['BIN', 'READ', 'RaW', 'CLIENT', 'SERVER']
 										RETURN n, e
 										UNION
 										MATCH (cur:Global)<-[e]-(n:Global)
 										WHERE
-										id(cur)=${cur.id}
+										id(cur)=${dbid}
 										AND
 										(
 											NOT n:Pipe
@@ -1083,13 +1069,16 @@ function successors_query(dbid, max_depth=4, files=true, sockets=true, pipes=tru
 										RETURN n, e
 										UNION
 										MATCH (cur:Global)-[e]-(n:Conn)
-										WHERE id(cur)=${cur.id}
-										RETURN n, e`).then(result => {return result;});
+										WHERE id(cur)=${dbid}
+										RETURN n, e`)
+				.then(result => {
+					findEdges(dbid, result.records, fn);
+				});
 			}
-			else if (cur.labels.indexOf('Process') > -1){
-				neighbours = session.run(`MATCH (cur:Process)<-[e]-(n:Global)
+			else if (process_obj['labels'] == ('Process')){
+				session.run(`MATCH (cur:Process)<-[e]-(n:Global)
 										WHERE
-										id(cur)=${cur.id}
+										id(cur)=${dbid}
 										AND
 										e.state in ['WRITE', 'RaW', 'CLIENT', 'SERVER']
 										AND
@@ -1105,13 +1094,16 @@ function successors_query(dbid, max_depth=4, files=true, sockets=true, pipes=tru
 										RETURN n, e
 										UNION
 										MATCH (cur:Process)<-[e]-(n:Process)
-										WHERE id(cur)=${cur.id}
-										RETURN n, e`).then(result => {return result;});
+										WHERE id(cur)=${dbid}
+										RETURN n, e`)
+				.then(result => {
+					findEdges(dbid, result.records, fn);
+				});
 			}
-			else if (cur.labels.indexOf('Conn') > -1){
-				neighbours = session.run(`MATCH (cur:Conn)-[e]-(n:Global)
+			else if (process_obj['labels'] == ('Conn')){
+				session.run(`MATCH (cur:Conn)-[e]-(n:Global)
 										WHERE
-										id(cur)=${cur.id}
+										id(cur)=${dbid}
 										AND
 										(
 											NOT n:Pipe
@@ -1122,41 +1114,48 @@ function successors_query(dbid, max_depth=4, files=true, sockets=true, pipes=tru
 										NOT ${JSON.stringify(matchers)} is Null
 										AND
 										any(lab in labels(n) WHERE lab IN ${JSON.stringify(matchers)})
-										RETURN n, e`).then(result => {return result;});
+										RETURN n, e`)
+				.then(result => {
+					findEdges(dbid, result.records, fn);
+				});
 			}
-			if (neighbours == null){
-				continue;
-			}
-			for (row in neighbours){//TODO: translate
-				if ((row['n'] in nodes) != null || 
-					(row['n'] in process_obj.filter( d < (cur_depth - 1)))){
-					continue;
-				}
-				if (cur_depth > 0){
-					process_obj = process_obj.concat((cur_depth - 1, row['n']));
-				}
-			}
-		}
+			// if (neighbours == null){
+			// 	continue;
+			// }
+			// for (row in neighbours){
+			// 	if ((row['n'] in nodes) != null || 
+			// 		(row['n'] in process_obj.filter( d < (cur_depth - 1)))){
+			// 		continue;
+			// 	}
+			// 	if (cur_depth > 0){
+			// 		process_obj = process_obj.concat((cur_depth - 1, row['n']));
+			// 	}
+			// }
+		//}
+	});
+}
+
+function findEdges(curId, neighbours, fn){
 		//TODO: swap this out
 		//{'ids': [n.id for n in nodes]}).data()
 		var ids = [];
-		for(n in nodes){
-			ids = ids.concat(n.id);
+			console.log(neighbours);
+		for(n in neighbours){
+			console.log(n);
+			ids = ids.concat(n.get('n').id);
 		}
-		session.run(`MATCH (a)-[e]-(b) WHERE id(a) IN ${JSON.stringify(ids)} AND id(b) IN ${JSON.stringify(ids)} RETURN DISTINCT e`)
+		session.run(`MATCH (a)-[e]-(b) WHERE id(a) IN ${curId} AND id(b) IN ${JSON.stringify(ids)} RETURN DISTINCT e`)
 		.then(result => {
 			session.close();
 			var edges = [];
 			for(row in result){
-				edges = edges.concat([row['e']]);
+				edges = edges.concat(row.get('e'));
 			}
-
 			fn({'nodes': nodes,
 				'edges': edges})
 			// return flask.jsonify({'nodes': nodes,
 			// 					  'edges': edges});
 			});
-		});
 }
 
 function get_detail_id(id, fn){
@@ -1168,6 +1167,18 @@ function get_detail_id(id, fn){
 		}
 		session.close();
 		fn(parseNeo4jNode(result.records[0].get('n')));
+	});
+	//return flask.jsonify(query['n'])
+}
+function get_detail_id_unparsed(id, fn){
+	var session = driver.session();
+	session.run(`MATCH (n) WHERE id(n)=${id} RETURN n`)
+	.then(result => {
+		if (result == null){
+			console.log(404);
+		}
+		session.close();
+		fn(result.records[0].get('n'));
 	});
 	//return flask.jsonify(query['n'])
 }
