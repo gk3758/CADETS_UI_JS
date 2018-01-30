@@ -32,7 +32,7 @@ var worksheetGraph = {
 	graph: testGraph
 };
 
-var worksheetCxtMenu = 
+testGraph.cxtmenu( 
 {
 	menuRadius: 140,
 	separatorWidth: 5,
@@ -65,14 +65,17 @@ var worksheetCxtMenu =
 		{
 			content: 'Files read',//TODO: get it working / test
 			select: function(ele){
-				var id = ele.data('id', function(result) {
-					let str = '';
-					Array.from(result.names).forEach(function(name) {
-						str += `<li>${name}</li>`;  // XXX: requires trusted UI server!
-					});
-					vex.dialog.alert({
-						unsafeMessage: `<h2>Files read:</h2><ul>${str}</ul>`,
-					});
+					console.log("test1");
+					var id = ele.data('id');
+					file_read_query(id, function(result){
+						let str = '';
+						 result.forEach(function(name) {
+							str += `<li>${name}</li>`;  // XXX: requires trusted UI server!
+						 });
+						 console.log(str);
+						 vex.dialog.alert({
+							unsafeMessage: `<h2>Files read:</h2><ul>${str}</ul>`,
+						 });
 				});
 			}
 		},
@@ -80,17 +83,14 @@ var worksheetCxtMenu =
 			content: 'Commands',//TODO: get it working / test 
 			select: function(ele){
 				var id = ele.data('id');
-				console.log("testA");
 				cmd_query(id, function(result) {
-				console.log("testB");
 					let message = `<h2>Commands run by node ${id}:</h2>`;
-					if (result.cmds.length == 0) {
+					if (result.length == 0) {
 						message += '<p>none</p>';
 					} else {
 						message += '<ul>';
-						for (let command of result.cmds) {
-							console.log(command);
-							message += `<li><a onclick="command_clicked(${command.dbid})">${command.cmd}</a></li>`;
+						for (let command of result) {//TODO: ask if this is correct output
+							message += `<li><a onclick="command_clicked(${command.dbid})">${command.cmdline}</a></li>`;
 						}
 						message += '</ul>';
 					}
@@ -111,7 +111,7 @@ var worksheetCxtMenu =
 			}
 		},
 	]
-};
+});
 
 //Worksheet Graph end
 
@@ -207,13 +207,17 @@ inspectorGraph.cxtmenu({
 	]
 });
 
-layout( inspectorGraph, 'cose');
 
 //inspector Graph end
 
 //run
+
 	insector_query('552408');
-//update_nodelist();
+
+	$('input[id *= "filter"],select[id *= "filter"]').on('change', update_nodelist);
+
+	update_nodelist();
+
 //run end
 
 //Functions
@@ -332,9 +336,7 @@ function import_into_worksheet(id, err = console.log) {
 
 	//TODO: make worksheet detail func first then use it here check if it is the right one
 	//return $.getJSON(`detail/${id}`, function(result) {
-		console.log("test1");
 	get_detail_id(id, function(result) {
-		console.log("test2");
 		let promise = null;
 
 		if ('parent' in result && graph.nodes(`[id="${result.parent}"]`).empty()) {
@@ -364,9 +366,7 @@ function import_into_worksheet(id, err = console.log) {
 				}
 			});
 		});
-		console.log("test3");
 	});
-		console.log("test4");
 }
 
 function inspect_and_import(id) {
@@ -379,9 +379,7 @@ function inspect_and_import(id) {
 //
 function import_neighbours_into_worksheet(id) {
 	// Get all of the node's neighbours:
-		console.log("111111");
 	get_neighbours(id, function(result) {
-		console.log("wwwwww");
 		let promise = $.when(null);
 
 		for (let n of result.nodes) {
@@ -412,8 +410,10 @@ function inspect_node(id, err = console.log) {
 				</tr>
 			`)
 		}
-		inspectee = result
+		inspectee = result;
+		console.log("sssssssss");
 	}).then(function() {
+		console.log("wwwwwwwww");
 		// Display the node's immediate connections in the inspector "Graph" panel.
 		get_neighbours(id, function(result) {
 			inspector.graph.remove('node');
@@ -513,7 +513,6 @@ function update_nodelist(err = console.log) {
 			remote_port = $('#filterRemotePort').val(),
 			limit = '100',
 			function(result) {
-				console.log("sssssssssss");
 				let nodelist = $('#nodelist');
 				nodelist.empty();
 
@@ -588,25 +587,25 @@ function parseNeo4jNode(o){
 	else if (labels.indexOf('Pipe') > -1){//TODO: test pipe
 		data.type = "pipe-endpoint";
 		data.creation = o['properties']['timestamp']['low'];
-		data.properties = o[properties];
+		//data.properties = o[properties];
 	}
 	else if (labels.indexOf('Process') > -1){
 		data.type = "process";
-		data.properties = o['properties'];
-		// data.saw_creation = !o['properties']['anomalous'];
-		// data.cmdline = o['properties']['cmdline'];
-		// data.host = o['properties']['host'];
-		// data.egid = o['properties'][`meta_egid`];
-		// data.euid = o['properties'][`meta_euid`];
-		// data.gid = o['properties'][`meta_gid`];
-		// data.login = o['properties'][`meta_login`];
-		// data.ts = o['properties'][`meta_ts`]['low'];
-		// data.uid = o['properties'][`meta_uid`];
-		// data.pid = o['properties']['pid'];
-		// data.uuid = o['properties']['uuid'];
-		// data.status = o['properties']['status'];
-		// data.timestamp = o['properties']['timestamp'];
-		// data.thin = o['properties']['thin'];
+		//data.properties = o['properties'];
+		data.saw_creation = !o['properties']['anomalous'];
+		data.cmdline = o['properties']['cmdline'];
+		data.host = o['properties']['host'];
+		data.egid = o['properties'][`meta_egid`];
+		data.euid = o['properties'][`meta_euid`];
+		data.gid = o['properties'][`meta_gid`];
+		data.login = o['properties'][`meta_login`];
+		data.ts = o['properties'][`meta_ts`]['low'];
+		data.uid = o['properties'][`meta_uid`];
+		data.pid = o['properties']['pid'];
+		data.uuid = o['properties']['uuid'];
+		data.status = o['properties']['status'];
+		data.timestamp = o['properties']['timestamp'];
+		data.thin = o['properties']['thin'];
 	}
 	else if (labels.indexOf('Machine') > -1){
 		data.type = "machine";
@@ -741,32 +740,43 @@ function insector_query(id){
 	});
 }
 
-function cmd_query(id){
+function file_read_query(id, fn){
 	var session = driver.session();
-	return session.run(`MATCH (n:Process)<-[:PROC_PARENT]-(c:Process) 
+	session.run(`MATCH (n:Process)<-[e:PROC_OBJ]-(c:File)
+						WHERE id(n) = ${id} AND
+							e.state in ['BIN', 'READ', 'RaW']
+						RETURN c.name AS g_name`)
+	.then(result => {
+		session.close();
+		if (result.length){
+			console.log(404);
+		}
+		var files = [];
+		result.records.forEach(function (record) 
+		{
+			files = files.concat(record.get('g_name'));
+		});
+		fn(files);
+	});
+	//return flask.jsonify({'names': sorted({name for row in files for name in row['g_name']})})
+}
+
+function cmd_query(id, fn){
+	var session = driver.session();
+	session.run(`MATCH (n:Process)<-[:PROC_PARENT]-(c:Process) 
 						WHERE id(n) = ${id} 
 						RETURN c ORDER BY c.timestamp`)
 	.then(result => {
 		session.close();
-		console.log(result.records)
-		return result.records //.get('c')
+		var cmds = [];
+		result.records.forEach(function (record) 
+		{
+			cmds = cmds.concat(parseNeo4jNode(record.get('c')));
+		});
+		fn(cmds);
 	});
 }
 
-function file_read_query(id){
-	var session = driver.session();
-	return session.run(`MATCH (n:Process)<-[e:PROC_OBJ]-(c:File)
-						WHERE id(n) = ${id} AND e.state in ['BIN', 'READ', 'RaW']
-						RETURN c.name AS g_name`)
-	.then(result => {
-		session.close();
-		if (files.length <= -1){
-			console.log(404);
-		}
-		console.log(result.records) 
-		return result.records;
-	});
-}
 
 function setup_machines() {
 	var session = driver.session();
@@ -958,7 +968,6 @@ function successors_query(dbid, max_depth=4, files=true, sockets=true, pipes=tru
 	if (!files && !sockets && !pipes){
 		matchers = [];
 	}
-	console.log(matchers);
 	var session = driver.session();
 	var source = session.run(`MATCH (n) WHERE id(n)=${dbid} RETURN n`);
 	if (source == null){
@@ -1094,7 +1103,8 @@ function get_nodes(node_type=null,
 				local_port=null, 
 				remote_ip=null, 
 				remote_port=null, 
-				limit='100'){
+				limit='100',
+				fn){
 	var lab;
 	var node_labels = {'pipe-endpoint': 'Pipe',
 					'socket-version': 'Socket',
@@ -1123,7 +1133,7 @@ function get_nodes(node_type=null,
 	}
 	var nodes = [];
 	var session = driver.session();
-	return session.run(`MATCH (n)
+	session.run(`MATCH (n)
 				WHERE 
 					${JSON.stringify(lab)} is Null
 					OR
@@ -1234,12 +1244,11 @@ function get_nodes(node_type=null,
 				LIMIT ${limit}`)
 	 .then(result => {
 		session.close();
-	 	result.records.forEach(function (record) 
+		result.records.forEach(function (record) 
 		{
 			nodes = nodes.concat(parseNeo4jNode(record.get('n')));
 		});
-		console.log(nodes);
-		return nodes;
+		fn(nodes);
 	 });
 		//flask.jsonify([row['n'] for row in query.data()])
 }
@@ -1272,21 +1281,19 @@ document.getElementById("loadGraph").onchange = function () {
 	load(this.files[0], worksheetGraph);
 };
 
-document.getElementById("saveGraph").onclick = function () { 
-	//worksheetGraph.graph.cxtmenu(worksheetCxtMenu);
-	//save(worksheetGraph.graph);
-	update_nodelist();
+document.getElementById("saveGraph").onclick = function () {
+	save(worksheetGraph.graph);
 };
 
 //layout from graphing.js
 document.getElementById("reDagre").onclick = function () {
-	worksheetGraph.graph.cxtmenu(worksheetCxtMenu);
 	//layout( worksheetGraph.graph, 'cose'); //TODO: get cDagre online
 };
 
 //layout from graphing.js
 document.getElementById("reCose-Bilkent").onclick = function () { 
 	layout( worksheetGraph.graph, 'cose'); //TODO: get cose-bilkent online
+	layout( inspectorGraph, 'cose');
 	layout( machineGraph, 'cose');
 };
 
