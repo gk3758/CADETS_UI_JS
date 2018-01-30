@@ -77,24 +77,24 @@ var driver = neo4j.driver("bolt://localhost", neo4j.auth.basic("neo4j", "abcde")
 var testGraph = cytoscape({
 	container: document.getElementById('worksheetGraph'),
 	boxSelectionEnabled: true,
-	//style: cytoscape.stylesheet()
-	// .selector('node')
-	// .css({
-	// 	'content': 'data(ips)',
-	// 	'text-valign': 'center',
-	// 	'color': 'white',
-	// 	'text-outline-width': 2,
-	// 	'background-color': 'red',
-	// 	'text-outline-color': 'black'
-	// })
-	// .selector('edge')
-	// .css({
-	// 	'curve-style': 'bezier',
-	// 	'target-arrow-shape': 'triangle',
-	// 	'target-arrow-color': 'black',
-	// 	'line-color': 'gray',
-	// 	'width': 1
-	// }),
+	style: cytoscape.stylesheet()
+	.selector('node')
+	.css({
+		'content': 'data(id)',
+		'text-valign': 'center',
+		'color': 'white',
+		'text-outline-width': 2,
+		'background-color': 'red',
+		'text-outline-color': 'black'
+	})
+	.selector('edge')
+	.css({
+		'curve-style': 'bezier',
+		'target-arrow-shape': 'triangle',
+		'target-arrow-color': 'black',
+		'line-color': 'gray',
+		'width': 1
+	}),
 });
 
 var worksheetGraph = {
@@ -149,7 +149,9 @@ var worksheetCxtMenu =
 			content: 'Commands',//TODO: get it working / test 
 			select: function(ele){
 				var id = ele.data('id');
+				console.log("testA");
 				cmd_query(id, function(result) {
+				console.log("testB");
 					let message = `<h2>Commands run by node ${id}:</h2>`;
 					if (result.cmds.length == 0) {
 						message += '<p>none</p>';
@@ -577,6 +579,7 @@ function update_nodelist(err = console.log) {
 			remote_port = $('#filterRemotePort').val(),
 			limit = '100',
 			function(result) {
+				console.log("sssssssssss");
 				let nodelist = $('#nodelist');
 				nodelist.empty();
 
@@ -644,7 +647,9 @@ function parseNeo4jNode(o){
 		data.type = "socket-version";
 		data.names = o['properties']['name'];
 		data.creation = o['properties']['timestamp']['low'];
-		data.properties = o[properties];
+		data.uuid = o['properties']['uuid'];
+		data.host = o['properties']['host'];
+		data.saw_creation = !o['properties']['anomalous'];
 	}
 	else if (labels.indexOf('Pipe') > -1){//TODO: test pipe
 		data.type = "pipe-endpoint";
@@ -653,20 +658,21 @@ function parseNeo4jNode(o){
 	}
 	else if (labels.indexOf('Process') > -1){
 		data.type = "process";
-		data.saw_creation = !o['properties']['anomalous'];
-		data.cmdline = o['properties']['cmdline'];
-		data.host = o['properties']['host'];
-		data.egid = o['properties'][`meta_egid`];
-		data.euid = o['properties'][`meta_euid`];
-		data.gid = o['properties'][`meta_gid`];
-		data.login = o['properties'][`meta_login`];
-		data.ts = o['properties'][`meta_ts`]['low'];
-		data.uid = o['properties'][`meta_uid`];
-		data.pid = o['properties']['pid'];
-		data.uuid = o['properties']['uuid'];
-		data.status = o['properties']['status'];
-		data.timestamp = o['properties']['timestamp'];
-		data.thin = o['properties']['thin'];
+		data.properties = o['properties'];
+		// data.saw_creation = !o['properties']['anomalous'];
+		// data.cmdline = o['properties']['cmdline'];
+		// data.host = o['properties']['host'];
+		// data.egid = o['properties'][`meta_egid`];
+		// data.euid = o['properties'][`meta_euid`];
+		// data.gid = o['properties'][`meta_gid`];
+		// data.login = o['properties'][`meta_login`];
+		// data.ts = o['properties'][`meta_ts`]['low'];
+		// data.uid = o['properties'][`meta_uid`];
+		// data.pid = o['properties']['pid'];
+		// data.uuid = o['properties']['uuid'];
+		// data.status = o['properties']['status'];
+		// data.timestamp = o['properties']['timestamp'];
+		// data.thin = o['properties']['thin'];
 	}
 	else if (labels.indexOf('Machine') > -1){
 		data.type = "machine";
@@ -685,8 +691,16 @@ function parseNeo4jNode(o){
 		data.ts = o['properties'][`meta_ts`]['low'];
 		data.uid = o['properties'][`meta_uid`];
 	}
-	else if (labels.indexOf('Conn') > -1){//TODO: test conn
-		data.properties = o[properties];
+	else if (labels.indexOf('Conn') > -1){//TODO: not many Conns to test with
+		data.authority = o['properties'][`authority`];
+		data.client = o['properties'][`client`];
+		data.client_ip = o['properties'][`client_ip`];
+		data.client_port = o['properties'][`client_port`];
+		data.confidence = o['properties'][`confidence`];
+		data.method = o['properties'][`method`];
+		data.server = o['properties'][`server`];
+		data.server_ip = o['properties'][`server_ip`];
+		data.server_port = o['properties'][`server_port`];
 		if(data['type'] != null){
 			data['ctype'] = data['type'];
 		} 
@@ -787,6 +801,7 @@ function insector_query(id){
 		{
 			var nodeData = parseNeo4jNode(record.get('p'));
 			add_node(nodeData, inspectorGraph);
+			add_node(nodeData, testGraph);
 		});
 		session.close();
 	});
@@ -1149,7 +1164,7 @@ function get_nodes(node_type=null,
 					'connection': 'Conn',
 					'file-version': 'Global'};
 	if  (!(node_type in node_labels)){
-		lab = null;
+		lab = "Null";
 	}
 	else{
 		lab = node_labels[node_type];
@@ -1166,124 +1181,127 @@ function get_nodes(node_type=null,
 	if (remote_port == null || remote_port == ""){
 		remote_port = ".*?";
 	}
-
+	var nodes = [];
 	var session = driver.session();
-	var query = session.run(`MATCH (n)
-							WHERE 
-								${lab} is Null
-								OR
-								${lab} in labels(n)
-							WITH n
-							WHERE
-								${name} is Null
-								OR
-								${name} = ''
-								OR
-								any(name in n.name WHERE name CONTAINS ${name})
-								OR
-								n.cmdline CONTAINS ${name}
-							WITH n
-							WHERE
-								${host} is Null
-								OR
-								${host} = ''
-								OR
+	session.run(`MATCH (n)
+				WHERE 
+					${JSON.stringify(lab)} is Null
+					OR
+					${JSON.stringify(lab)} in labels(n)
+				WITH n
+				WHERE
+					${JSON.stringify(name)} is Null
+					OR
+					${JSON.stringify(name)} = ''
+					OR
+					any(name in n.name WHERE name CONTAINS ${JSON.stringify(name)})
+					OR
+					n.cmdline CONTAINS ${JSON.stringify(name)}
+				WITH n
+				WHERE
+					${JSON.stringify(host)} is Null
+					OR
+					${JSON.stringify(host)} = ''
+					OR
+					(
+						exists(n.host)
+						AND
+						n.host = ${JSON.stringify(host)}
+					)
+					OR
+					n.uuid = ${JSON.stringify(host)}
+				WITH n
+				MATCH (m:Machine)
+				WHERE
+					(
+						n:Conn
+						AND
+						(
+							n.client_ip=~${JSON.stringify(local_ip)}
+							OR
+							n.server_ip=~${JSON.stringify(local_ip)}
+							OR
+							(
+								n.type = 'Pipe'
+								AND
+								${JSON.stringify(local_ip)} = '.*?'
+							)
+						)
+						AND
+						(
+							n.client_port=~${JSON.stringify(local_port)}
+							OR
+							n.server_port=~${JSON.stringify(local_port)}
+							OR
+							(
+								n.type = 'Pipe'
+								AND
+								${JSON.stringify(local_port)} = '.*?'
+							)
+						)
+						AND
+						(
+							n.server_ip=~${JSON.stringify(remote_ip)}
+							OR
+							n.client_ip=~${JSON.stringify(remote_ip)}
+							OR
+							(
+								n.type = 'Pipe'
+								AND
+								${JSON.stringify(remote_ip)} = '.*?'
+							)
+						)
+						AND
+						(
+							n.server_port=~${JSON.stringify(remote_port)}
+							OR
+							n.client_port=~${JSON.stringify(remote_port)}
+							OR
+							(
+								n.type = 'Pipe'
+								AND
+								${JSON.stringify(remote_port)} = '.*?'
+							)
+						)
+					)
+					OR
+					(
+						NOT n:Conn
+						AND
+						(
+							NOT n:Socket
+							OR
+							(
+								n:Socket
+								AND
+								any(name in n.name
+								WHERE name =~ (${JSON.stringify(remote_ip)}+':?'+${JSON.stringify(remote_port)}))
+								AND
 								(
-									exists(n.host)
-									AND
-									n.host = ${host}
-								)
-								OR
-								n.uuid = ${host}
-							WITH n
-							MATCH (m:Machine)
-							WHERE
-								(
-									n:Conn
-									AND
+									${JSON.stringify(local_ip)} = ".*?"
+									OR
 									(
-										n.client_ip=~${local_ip}
-										OR
-										n.server_ip=~${local_ip}
-										OR
-										(
-											n.type = 'Pipe'
-											AND
-											${local_ip} = '.*?'
-										)
-									)
-									AND
-									(
-										n.client_port=~${local_port}
-										OR
-										n.server_port=~${local_port}
-										OR
-										(
-											n.type = 'Pipe'
-											AND
-											${local_port} = '.*?'
-										)
-									)
-									AND
-									(
-										n.server_ip=~${remote_ip}
-										OR
-										n.client_ip=~${remote_ip}
-										OR
-										(
-											n.type = 'Pipe'
-											AND
-											${remote_ip} = '.*?'
-										)
-									)
-									AND
-									(
-										n.server_port=~${remote_port}
-										OR
-										n.client_port=~${remote_port}
-										OR
-										(
-											n.type = 'Pipe'
-											AND
-											${remote_port} = '.*?'
-										)
-									)
-								)
-								OR
-								(
-									NOT n:Conn
-									AND
-									(
-										NOT n:Socket
-										OR
-										(
-											n:Socket
-											AND
-											any(name in n.name
-											WHERE name =~ (${remote_ip}+':?'+${remote_port}))
-											AND
-											(
-												${local_ip} = ".*?"
-												OR
-												(
-													m.uuid = n.host
-													AND
-													any(l_ip in m.ips
-													WHERE l_ip = ${local_ip})
-												)
-											)
-										)
+										m.uuid = n.host
+										AND
+										any(l_ip in m.ips
+										WHERE l_ip = ${JSON.stringify(local_ip)})
 									)
 								)
-							RETURN DISTINCT n
-							LIMIT ${parseInt(limit)}`)
-	.then(result => {return result.records.forEach(function (record) 
-		{
-			console.log(record.get('n'));
-		});
+							)
+						)
+					)
+				RETURN DISTINCT n
+				LIMIT ${limit}`)
+	 .then(result => {
 		session.close();
-	});
-	return query;//flask.jsonify([row['n'] for row in query.data()])
+	 	result.records.forEach(function (record) 
+		{
+			nodes = nodes.concat(parseNeo4jNode(record.get('n')));
+		});
+		console.log(nodes);
+		return nodes;
+	 });
+		//flask.jsonify([row['n'] for row in query.data()])
 }
 
 //Queries end
@@ -1315,13 +1333,14 @@ document.getElementById("loadGraph").onchange = function () {
 };
 
 document.getElementById("saveGraph").onclick = function () { 
-	worksheetGraph.graph.cxtmenu(worksheetCxtMenu);
+	//worksheetGraph.graph.cxtmenu(worksheetCxtMenu);
 	//save(worksheetGraph.graph);
+	update_nodelist();
 };
 
 //layout from graphing.js
 document.getElementById("reDagre").onclick = function () {
-	//worksheetGraph.graph.cxtmenu(worksheetCxtMenu);
+	worksheetGraph.graph.cxtmenu(worksheetCxtMenu);
 	//layout( worksheetGraph.graph, 'cose'); //TODO: get cDagre online
 };
 
