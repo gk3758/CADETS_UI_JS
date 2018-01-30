@@ -359,10 +359,12 @@ function add_edge(data, graph) {
 //
 function get_neighbours(id, fn) {
 	return get_neighbours_id(id,
+							fn,
 							files = $('#inspectFiles').is(':checked'),
 							sockets = $('#inspectSockets').is(':checked'),
 							pipes = $('#inspectPipes').is(':checked'),
-							process_meta = $('#inspectProcessMeta').is(':checked'));
+							process_meta = $('#inspectProcessMeta').is(':checked')
+							);
 
 	// return $.getJSON(`neighbours/${id}?${query}`, fn).fail(err);
 }
@@ -446,6 +448,7 @@ function inspect_and_import(id) {
 //
 function import_neighbours_into_worksheet(id) {
 	// Get all of the node's neighbours:
+		console.log("111111");
 	get_neighbours(id, function(result) {
 		console.log("wwwwww");
 		let promise = $.when(null);
@@ -809,25 +812,29 @@ function insector_query(id){
 
 function cmd_query(id){
 	var session = driver.session();
-	cmds = session.run(`MATCH (n:Process)<-[:PROC_PARENT]-(c:Process) 
+	return session.run(`MATCH (n:Process)<-[:PROC_PARENT]-(c:Process) 
 						WHERE id(n) = ${id} 
 						RETURN c ORDER BY c.timestamp`)
-	.then(result => {return result.records
-		console.log(result.records) });//.get('c')
-
-	session.close();
+	.then(result => {
+		session.close();
+		console.log(result.records)
+		return result.records //.get('c')
+	});
 }
 
 function file_read_query(id){
 	var session = driver.session();
-	nodes = session.run(`MATCH (n:Process)<-[e:PROC_OBJ]-(c:File)
+	return session.run(`MATCH (n:Process)<-[e:PROC_OBJ]-(c:File)
 						WHERE id(n) = ${id} AND e.state in ['BIN', 'READ', 'RaW']
 						RETURN c.name AS g_name`)
-	.then(result => {return result.records
-		console.log(result.records) });
-	if (files.length <= -1){
-		flask.abort(404)
-	}
+	.then(result => {
+		session.close();
+		if (files.length <= -1){
+			console.log(404);
+		}
+		console.log(result.records) 
+		return result.records;
+	});
 }
 
 function setup_machines() {
@@ -858,7 +865,7 @@ function setup_machines() {
 }
 
 //the int one
-function get_neighbours_id(id, files=true, sockets=true, pipes=true, process_meta=true){
+function get_neighbours_id(id, fn, files=true, sockets=true, pipes=true, process_meta=true){
 	var session = driver.session();
 	var neighbours;
 	var root_node;
@@ -883,7 +890,7 @@ function get_neighbours_id(id, files=true, sockets=true, pipes=true, process_met
 	if (process_meta){
 		matchers = matchers.concat('Meta');
 	}
-	return session.run(`MATCH (s)-[e]-(d)
+	session.run(`MATCH (s)-[e]-(d)
 				WHERE id(s) = ${id}
 				AND NOT
 				(
@@ -949,8 +956,10 @@ function get_neighbours_id(id, files=true, sockets=true, pipes=true, process_met
 			neighbour_edges = neighbour_edges.concat(parseNeo4jEdge(neighbours[row].get('e')));
 		}
 		session.close();
-		return ({nodes: neighbour_nodes,
+		fn({nodes: neighbour_nodes,
 				edges: neighbour_edges});
+		// return ({nodes: neighbour_nodes,
+		// 		edges: neighbour_edges});
 	});
 }
 
@@ -1000,39 +1009,39 @@ function get_neighbours_id(id, files=true, sockets=true, pipes=true, process_met
 // 	// 					  'edges': {row['e'] for row in res}});
 // }
 
-function successors_query(dbid, max_depth='4', files=true, sockets=true, pipes=true, process_meta=true){
-	max_depth = int(max_depth);
-	matchers = set();
+//needs proper translation
+function successors_query(dbid, max_depth=4, files=true, sockets=true, pipes=true, process_meta=true){
+	var matchers = [];
 	if (files){
-		matchers.add('File');
+		matchers = matchers.concat('File');
 	}
 	if (sockets){
-		matchers.add('Socket');
+		matchers = matchers.concat('Socket');
 	}
 	if (pipes){
-		matchers.add('Pipe');
+		matchers = matchers.concat('Pipe');
 	}
 	if (files && sockets && pipes){
-		matchers.add('Global');
+		matchers = matchers.concat('Global');
 	}
-	matchers = list(matchers);
 	if (!files && !sockets && !pipes){
-		matchers = null;
+		matchers = [];
 	}
 	console.log(matchers);
 	var session = driver.session();
-	source = session.run(`MATCH (n) WHERE id(n)=${dbid} RETURN n`);
+	var source = session.run(`MATCH (n) WHERE id(n)=${dbid} RETURN n`);
 	if (source == null){
 		console.log(404);
 	}
 
 	source = source['n'];
 	process = [(max_depth, source)];
-	nodes = [];
+	var nodes = [];
 	while (process.length){
-		cur_depth, cur = process.pop(0);
+		var cur_depth;
+		var cur = process.pop(0);
 		nodes.append(cur);
-		var neighbours = null;
+		var neighbours = [];
 		if (cur.labels.indexOf('Global') > -1){
 			neighbours = session.run(`MATCH (cur:Global)-[e]->(n:Process)
 									WHERE
@@ -1051,9 +1060,9 @@ function successors_query(dbid, max_depth='4', files=true, sockets=true, pipes=t
 										n.fds <> []
 									)
 									AND
-									NOT ${matchers} is Null
+									NOT ${JSON.stringify(matchers)} is Null
 									AND
-									any(lab in labels(n) WHERE lab IN ${matchers})
+									any(lab in labels(n) WHERE lab IN ${JSON.stringify(matchers)})
 									RETURN n, e
 									UNION
 									MATCH (cur:Global)-[e]-(n:Conn)
@@ -1073,9 +1082,9 @@ function successors_query(dbid, max_depth='4', files=true, sockets=true, pipes=t
 										n.fds <> []
 									)
 									AND
-									NOT ${matchers} is Null
+									NOT ${JSON.stringify(matchers)} is Null
 									AND
-									any(lab in labels(n) WHERE lab IN ${matchers})
+									any(lab in labels(n) WHERE lab IN ${JSON.stringify(matchers)})
 									RETURN n, e
 									UNION
 									MATCH (cur:Process)<-[e]-(n:Process)
@@ -1093,9 +1102,9 @@ function successors_query(dbid, max_depth='4', files=true, sockets=true, pipes=t
 										n.fds <> []
 									)
 									AND
-									NOT ${matchers} is Null
+									NOT ${JSON.stringify(matchers)} is Null
 									AND
-									any(lab in labels(n) WHERE lab IN ${matchers})
+									any(lab in labels(n) WHERE lab IN ${JSON.stringify(matchers)})
 									RETURN n, e`);
 		}
 		if (neighbours == null){
@@ -1123,15 +1132,15 @@ function successors_query(dbid, max_depth='4', files=true, sockets=true, pipes=t
 						  'edges': edges});
 }
 
-function get_detail_id(id){
+function get_detail_id(id, fn){
 	var session = driver.session();
-	return session.run(`MATCH (n) WHERE id(n)=${id} RETURN n`)
+	session.run(`MATCH (n) WHERE id(n)=${id} RETURN n`)
 	.then(result => {
 		if (result == null){
 			console.log(404);
 		}
 		session.close();
-		return(parseNeo4jNode(result.records[0].get('n')));
+		fn(parseNeo4jNode(result.records[0].get('n')));
 	});
 	//return flask.jsonify(query['n'])
 }
@@ -1183,7 +1192,7 @@ function get_nodes(node_type=null,
 	}
 	var nodes = [];
 	var session = driver.session();
-	session.run(`MATCH (n)
+	return session.run(`MATCH (n)
 				WHERE 
 					${JSON.stringify(lab)} is Null
 					OR
