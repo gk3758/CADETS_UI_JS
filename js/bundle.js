@@ -65,9 +65,9 @@
 /************************************************************************/
 /******/ ([
 /* 0 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ (function(module, exports) {
 
-/* WEBPACK VAR INJECTION */(function(process) {var neo4j = window.neo4j.v1;
+var neo4j = window.neo4j.v1;
 var driver = neo4j.driver("bolt://localhost", neo4j.auth.basic("neo4j", "abcde"));
 
 //******************Don't forget to close sessions!!!!!
@@ -382,7 +382,8 @@ function get_successors(id, fn, err = console.log) {
 					files = $('#inspectFiles').is(':checked'),
 					sockets = $('#inspectSockets').is(':checked'),
 					pipes = $('#inspectPipes').is(':checked'),
-					process_meta = $('#inspectProcessMeta').is(':checked'));
+					process_meta = $('#inspectProcessMeta').is(':checked'),
+					fn);
 
 	// return $.getJSON(`successors/${id}?${query}`, fn).fail(err);
 }
@@ -1020,7 +1021,7 @@ function get_neighbours_id(id, fn, files=true, sockets=true, pipes=true, process
 // }
 
 //needs proper translation
-function successors_query(dbid, max_depth=4, files=true, sockets=true, pipes=true, process_meta=true){
+function successors_query(dbid, max_depth=4, files=true, sockets=true, pipes=true, process_meta=true, fn){
 	var matchers = [];
 	if (files){
 		matchers = matchers.concat('File');
@@ -1037,108 +1038,125 @@ function successors_query(dbid, max_depth=4, files=true, sockets=true, pipes=tru
 	if (!files && !sockets && !pipes){
 		matchers = [];
 	}
-	var session = driver.session();
-	var source = session.run(`MATCH (n) WHERE id(n)=${dbid} RETURN n`);
-	if (source == null){
-		console.log(404);
-	}
-
-	source = source['n'];
-	process = [(max_depth, source)];
+	var process_obj;
 	var nodes = [];
-	while (process.length){
-		var cur_depth;
-		var cur = process.pop(0);
-		nodes.append(cur);
-		var neighbours = [];
-		if (cur.labels.indexOf('Global') > -1){
-			neighbours = session.run(`MATCH (cur:Global)-[e]->(n:Process)
-									WHERE
-									id(cur)=${cur.id}
-									AND
-									e.state in ['BIN', 'READ', 'RaW', 'CLIENT', 'SERVER']
-									RETURN n, e
-									UNION
-									MATCH (cur:Global)<-[e]-(n:Global)
-									WHERE
-									id(cur)=${cur.id}
-									AND
-									(
-										NOT n:Pipe
-										OR
-										n.fds <> []
-									)
-									AND
-									NOT ${JSON.stringify(matchers)} is Null
-									AND
-									any(lab in labels(n) WHERE lab IN ${JSON.stringify(matchers)})
-									RETURN n, e
-									UNION
-									MATCH (cur:Global)-[e]-(n:Conn)
-									WHERE id(cur)=${cur.id}
-									RETURN n, e`);
+	var cur_depth;
+	var cur;
+	var neighbours;
+	console.log(dbid);
+	var session = driver.session();
+	session.run(`MATCH (n) WHERE id(n)=${dbid} RETURN n`)
+	.then(result => {
+		if (result == null){
+			console.log(404);
 		}
-		else if (cur.labels.indexOf('Process') > -1){
-			neighbours = session.run(`MATCH (cur:Process)<-[e]-(n:Global)
-									WHERE
-									id(cur)=${cur.id}
-									AND
-									e.state in ['WRITE', 'RaW', 'CLIENT', 'SERVER']
-									AND
-									(
-										NOT n:Pipe
-										OR
-										n.fds <> []
-									)
-									AND
-									NOT ${JSON.stringify(matchers)} is Null
-									AND
-									any(lab in labels(n) WHERE lab IN ${JSON.stringify(matchers)})
-									RETURN n, e
-									UNION
-									MATCH (cur:Process)<-[e]-(n:Process)
-									WHERE id(cur)=${cur.id}
-									RETURN n, e`);
-		}
-		else if (cur.labels.indexOf('Conn') > -1){
-			neighbours = session.run(`MATCH (cur:Conn)-[e]-(n:Global)
-									WHERE
-									id(cur)=${cur.id}
-									AND
-									(
-										NOT n:Pipe
-										OR
-										n.fds <> []
-									)
-									AND
-									NOT ${JSON.stringify(matchers)} is Null
-									AND
-									any(lab in labels(n) WHERE lab IN ${JSON.stringify(matchers)})
-									RETURN n, e`);
-		}
-		if (neighbours == null){
-			continue;
-		}
-		for (row in neighbours){//TODO: translate
-			// if row['n'] in nodes or row['n'] in [n for d, n in process if d < (cur_depth - 1)]{
-			// 	continue;
-			// }
-			if (cur_depth > 0){
-				process.append((cur_depth - 1, row['n']));
+		console.log(result);
+		result = result.records;
+		process_obj = result.splice(0,max_depth-1);//[(max_depth, result)];
+		while (process_obj.length){
+			cur = process_obj[0];
+			process_obj.shift();
+			cur_depth = process_obj.lenght;
+			nodes = nodes.concat(cur);
+			neighbours = [];
+			if (cur.labels.indexOf('Global') > -1){//might need to change over to async
+				neighbours = session.run(`MATCH (cur:Global)-[e]->(n:Process)
+										WHERE
+										id(cur)=${cur.id}
+										AND
+										e.state in ['BIN', 'READ', 'RaW', 'CLIENT', 'SERVER']
+										RETURN n, e
+										UNION
+										MATCH (cur:Global)<-[e]-(n:Global)
+										WHERE
+										id(cur)=${cur.id}
+										AND
+										(
+											NOT n:Pipe
+											OR
+											n.fds <> []
+										)
+										AND
+										NOT ${JSON.stringify(matchers)} is Null
+										AND
+										any(lab in labels(n) WHERE lab IN ${JSON.stringify(matchers)})
+										RETURN n, e
+										UNION
+										MATCH (cur:Global)-[e]-(n:Conn)
+										WHERE id(cur)=${cur.id}
+										RETURN n, e`).then(result => {return result;});
+			}
+			else if (cur.labels.indexOf('Process') > -1){
+				neighbours = session.run(`MATCH (cur:Process)<-[e]-(n:Global)
+										WHERE
+										id(cur)=${cur.id}
+										AND
+										e.state in ['WRITE', 'RaW', 'CLIENT', 'SERVER']
+										AND
+										(
+											NOT n:Pipe
+											OR
+											n.fds <> []
+										)
+										AND
+										NOT ${JSON.stringify(matchers)} is Null
+										AND
+										any(lab in labels(n) WHERE lab IN ${JSON.stringify(matchers)})
+										RETURN n, e
+										UNION
+										MATCH (cur:Process)<-[e]-(n:Process)
+										WHERE id(cur)=${cur.id}
+										RETURN n, e`).then(result => {return result;});
+			}
+			else if (cur.labels.indexOf('Conn') > -1){
+				neighbours = session.run(`MATCH (cur:Conn)-[e]-(n:Global)
+										WHERE
+										id(cur)=${cur.id}
+										AND
+										(
+											NOT n:Pipe
+											OR
+											n.fds <> []
+										)
+										AND
+										NOT ${JSON.stringify(matchers)} is Null
+										AND
+										any(lab in labels(n) WHERE lab IN ${JSON.stringify(matchers)})
+										RETURN n, e`).then(result => {return result;});
+			}
+			if (neighbours == null){
+				continue;
+			}
+			for (row in neighbours){//TODO: translate
+				if ((row['n'] in nodes) != null || 
+					(row['n'] in process_obj.filter( d < (cur_depth - 1)))){
+					continue;
+				}
+				if (cur_depth > 0){
+					process_obj = process_obj.concat((cur_depth - 1, row['n']));
+				}
 			}
 		}
-	}
-	var edata = session.run(`MATCH (a)-[e]-(b) WHERE id(a) IN ${ids} AND id(b) IN ${ids} RETURN DISTINCT e`);
-	//TODO: swap this out
-	//{'ids': [n.id for n in nodes]}).data()
+		//TODO: swap this out
+		//{'ids': [n.id for n in nodes]}).data()
+		var ids = [];
+		for(n in nodes){
+			ids = ids.concat(n.id);
+		}
+		session.run(`MATCH (a)-[e]-(b) WHERE id(a) IN ${JSON.stringify(ids)} AND id(b) IN ${JSON.stringify(ids)} RETURN DISTINCT e`)
+		.then(result => {
+			session.close();
+			var edges = [];
+			for(row in result){
+				edges = edges.concat([row['e']]);
+			}
 
-	var edges = [];
-	for(row in edata){
-		edges.push([row['e']]);
-	}
-
-	return flask.jsonify({'nodes': nodes,
-						  'edges': edges});
+			fn({'nodes': nodes,
+				'edges': edges})
+			// return flask.jsonify({'nodes': nodes,
+			// 					  'edges': edges});
+			});
+		});
 }
 
 function get_detail_id(id, fn){
@@ -1367,197 +1385,6 @@ document.getElementById("reCose-Bilkent").onclick = function () {
 };
 
 //Button logic ends
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(1)))
-
-/***/ }),
-/* 1 */
-/***/ (function(module, exports) {
-
-// shim for using process in browser
-var process = module.exports = {};
-
-// cached from whatever global is present so that test runners that stub it
-// don't break things.  But we need to wrap it in a try catch in case it is
-// wrapped in strict mode code which doesn't define any globals.  It's inside a
-// function because try/catches deoptimize in certain engines.
-
-var cachedSetTimeout;
-var cachedClearTimeout;
-
-function defaultSetTimout() {
-    throw new Error('setTimeout has not been defined');
-}
-function defaultClearTimeout () {
-    throw new Error('clearTimeout has not been defined');
-}
-(function () {
-    try {
-        if (typeof setTimeout === 'function') {
-            cachedSetTimeout = setTimeout;
-        } else {
-            cachedSetTimeout = defaultSetTimout;
-        }
-    } catch (e) {
-        cachedSetTimeout = defaultSetTimout;
-    }
-    try {
-        if (typeof clearTimeout === 'function') {
-            cachedClearTimeout = clearTimeout;
-        } else {
-            cachedClearTimeout = defaultClearTimeout;
-        }
-    } catch (e) {
-        cachedClearTimeout = defaultClearTimeout;
-    }
-} ())
-function runTimeout(fun) {
-    if (cachedSetTimeout === setTimeout) {
-        //normal enviroments in sane situations
-        return setTimeout(fun, 0);
-    }
-    // if setTimeout wasn't available but was latter defined
-    if ((cachedSetTimeout === defaultSetTimout || !cachedSetTimeout) && setTimeout) {
-        cachedSetTimeout = setTimeout;
-        return setTimeout(fun, 0);
-    }
-    try {
-        // when when somebody has screwed with setTimeout but no I.E. maddness
-        return cachedSetTimeout(fun, 0);
-    } catch(e){
-        try {
-            // When we are in I.E. but the script has been evaled so I.E. doesn't trust the global object when called normally
-            return cachedSetTimeout.call(null, fun, 0);
-        } catch(e){
-            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error
-            return cachedSetTimeout.call(this, fun, 0);
-        }
-    }
-
-
-}
-function runClearTimeout(marker) {
-    if (cachedClearTimeout === clearTimeout) {
-        //normal enviroments in sane situations
-        return clearTimeout(marker);
-    }
-    // if clearTimeout wasn't available but was latter defined
-    if ((cachedClearTimeout === defaultClearTimeout || !cachedClearTimeout) && clearTimeout) {
-        cachedClearTimeout = clearTimeout;
-        return clearTimeout(marker);
-    }
-    try {
-        // when when somebody has screwed with setTimeout but no I.E. maddness
-        return cachedClearTimeout(marker);
-    } catch (e){
-        try {
-            // When we are in I.E. but the script has been evaled so I.E. doesn't  trust the global object when called normally
-            return cachedClearTimeout.call(null, marker);
-        } catch (e){
-            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error.
-            // Some versions of I.E. have different rules for clearTimeout vs setTimeout
-            return cachedClearTimeout.call(this, marker);
-        }
-    }
-
-
-
-}
-var queue = [];
-var draining = false;
-var currentQueue;
-var queueIndex = -1;
-
-function cleanUpNextTick() {
-    if (!draining || !currentQueue) {
-        return;
-    }
-    draining = false;
-    if (currentQueue.length) {
-        queue = currentQueue.concat(queue);
-    } else {
-        queueIndex = -1;
-    }
-    if (queue.length) {
-        drainQueue();
-    }
-}
-
-function drainQueue() {
-    if (draining) {
-        return;
-    }
-    var timeout = runTimeout(cleanUpNextTick);
-    draining = true;
-
-    var len = queue.length;
-    while(len) {
-        currentQueue = queue;
-        queue = [];
-        while (++queueIndex < len) {
-            if (currentQueue) {
-                currentQueue[queueIndex].run();
-            }
-        }
-        queueIndex = -1;
-        len = queue.length;
-    }
-    currentQueue = null;
-    draining = false;
-    runClearTimeout(timeout);
-}
-
-process.nextTick = function (fun) {
-    var args = new Array(arguments.length - 1);
-    if (arguments.length > 1) {
-        for (var i = 1; i < arguments.length; i++) {
-            args[i - 1] = arguments[i];
-        }
-    }
-    queue.push(new Item(fun, args));
-    if (queue.length === 1 && !draining) {
-        runTimeout(drainQueue);
-    }
-};
-
-// v8 likes predictible objects
-function Item(fun, array) {
-    this.fun = fun;
-    this.array = array;
-}
-Item.prototype.run = function () {
-    this.fun.apply(null, this.array);
-};
-process.title = 'browser';
-process.browser = true;
-process.env = {};
-process.argv = [];
-process.version = ''; // empty string to avoid regexp issues
-process.versions = {};
-
-function noop() {}
-
-process.on = noop;
-process.addListener = noop;
-process.once = noop;
-process.off = noop;
-process.removeListener = noop;
-process.removeAllListeners = noop;
-process.emit = noop;
-process.prependListener = noop;
-process.prependOnceListener = noop;
-
-process.listeners = function (name) { return [] }
-
-process.binding = function (name) {
-    throw new Error('process.binding is not supported');
-};
-
-process.cwd = function () { return '/' };
-process.chdir = function (dir) {
-    throw new Error('process.chdir is not supported');
-};
-process.umask = function() { return 0; };
-
 
 /***/ })
 /******/ ]);

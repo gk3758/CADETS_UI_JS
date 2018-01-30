@@ -313,7 +313,8 @@ function get_successors(id, fn, err = console.log) {
 					files = $('#inspectFiles').is(':checked'),
 					sockets = $('#inspectSockets').is(':checked'),
 					pipes = $('#inspectPipes').is(':checked'),
-					process_meta = $('#inspectProcessMeta').is(':checked'));
+					process_meta = $('#inspectProcessMeta').is(':checked'),
+					fn);
 
 	// return $.getJSON(`successors/${id}?${query}`, fn).fail(err);
 }
@@ -951,7 +952,7 @@ function get_neighbours_id(id, fn, files=true, sockets=true, pipes=true, process
 // }
 
 //needs proper translation
-function successors_query(dbid, max_depth=4, files=true, sockets=true, pipes=true, process_meta=true){
+function successors_query(dbid, max_depth=4, files=true, sockets=true, pipes=true, process_meta=true, fn){
 	var matchers = [];
 	if (files){
 		matchers = matchers.concat('File');
@@ -968,108 +969,125 @@ function successors_query(dbid, max_depth=4, files=true, sockets=true, pipes=tru
 	if (!files && !sockets && !pipes){
 		matchers = [];
 	}
-	var session = driver.session();
-	var source = session.run(`MATCH (n) WHERE id(n)=${dbid} RETURN n`);
-	if (source == null){
-		console.log(404);
-	}
-
-	source = source['n'];
-	process = [(max_depth, source)];
+	var process_obj;
 	var nodes = [];
-	while (process.length){
-		var cur_depth;
-		var cur = process.pop(0);
-		nodes.append(cur);
-		var neighbours = [];
-		if (cur.labels.indexOf('Global') > -1){
-			neighbours = session.run(`MATCH (cur:Global)-[e]->(n:Process)
-									WHERE
-									id(cur)=${cur.id}
-									AND
-									e.state in ['BIN', 'READ', 'RaW', 'CLIENT', 'SERVER']
-									RETURN n, e
-									UNION
-									MATCH (cur:Global)<-[e]-(n:Global)
-									WHERE
-									id(cur)=${cur.id}
-									AND
-									(
-										NOT n:Pipe
-										OR
-										n.fds <> []
-									)
-									AND
-									NOT ${JSON.stringify(matchers)} is Null
-									AND
-									any(lab in labels(n) WHERE lab IN ${JSON.stringify(matchers)})
-									RETURN n, e
-									UNION
-									MATCH (cur:Global)-[e]-(n:Conn)
-									WHERE id(cur)=${cur.id}
-									RETURN n, e`);
+	var cur_depth;
+	var cur;
+	var neighbours;
+	console.log(dbid);
+	var session = driver.session();
+	session.run(`MATCH (n) WHERE id(n)=${dbid} RETURN n`)
+	.then(result => {
+		if (result == null){
+			console.log(404);
 		}
-		else if (cur.labels.indexOf('Process') > -1){
-			neighbours = session.run(`MATCH (cur:Process)<-[e]-(n:Global)
-									WHERE
-									id(cur)=${cur.id}
-									AND
-									e.state in ['WRITE', 'RaW', 'CLIENT', 'SERVER']
-									AND
-									(
-										NOT n:Pipe
-										OR
-										n.fds <> []
-									)
-									AND
-									NOT ${JSON.stringify(matchers)} is Null
-									AND
-									any(lab in labels(n) WHERE lab IN ${JSON.stringify(matchers)})
-									RETURN n, e
-									UNION
-									MATCH (cur:Process)<-[e]-(n:Process)
-									WHERE id(cur)=${cur.id}
-									RETURN n, e`);
-		}
-		else if (cur.labels.indexOf('Conn') > -1){
-			neighbours = session.run(`MATCH (cur:Conn)-[e]-(n:Global)
-									WHERE
-									id(cur)=${cur.id}
-									AND
-									(
-										NOT n:Pipe
-										OR
-										n.fds <> []
-									)
-									AND
-									NOT ${JSON.stringify(matchers)} is Null
-									AND
-									any(lab in labels(n) WHERE lab IN ${JSON.stringify(matchers)})
-									RETURN n, e`);
-		}
-		if (neighbours == null){
-			continue;
-		}
-		for (row in neighbours){//TODO: translate
-			// if row['n'] in nodes or row['n'] in [n for d, n in process if d < (cur_depth - 1)]{
-			// 	continue;
-			// }
-			if (cur_depth > 0){
-				process.append((cur_depth - 1, row['n']));
+		console.log(result);
+		result = result.records;
+		process_obj = result.splice(0,max_depth-1);//[(max_depth, result)];
+		while (process_obj.length){
+			cur = process_obj[0];
+			process_obj.shift();
+			cur_depth = process_obj.lenght;
+			nodes = nodes.concat(cur);
+			neighbours = [];
+			if (cur.labels.indexOf('Global') > -1){//might need to change over to async
+				neighbours = session.run(`MATCH (cur:Global)-[e]->(n:Process)
+										WHERE
+										id(cur)=${cur.id}
+										AND
+										e.state in ['BIN', 'READ', 'RaW', 'CLIENT', 'SERVER']
+										RETURN n, e
+										UNION
+										MATCH (cur:Global)<-[e]-(n:Global)
+										WHERE
+										id(cur)=${cur.id}
+										AND
+										(
+											NOT n:Pipe
+											OR
+											n.fds <> []
+										)
+										AND
+										NOT ${JSON.stringify(matchers)} is Null
+										AND
+										any(lab in labels(n) WHERE lab IN ${JSON.stringify(matchers)})
+										RETURN n, e
+										UNION
+										MATCH (cur:Global)-[e]-(n:Conn)
+										WHERE id(cur)=${cur.id}
+										RETURN n, e`).then(result => {return result;});
+			}
+			else if (cur.labels.indexOf('Process') > -1){
+				neighbours = session.run(`MATCH (cur:Process)<-[e]-(n:Global)
+										WHERE
+										id(cur)=${cur.id}
+										AND
+										e.state in ['WRITE', 'RaW', 'CLIENT', 'SERVER']
+										AND
+										(
+											NOT n:Pipe
+											OR
+											n.fds <> []
+										)
+										AND
+										NOT ${JSON.stringify(matchers)} is Null
+										AND
+										any(lab in labels(n) WHERE lab IN ${JSON.stringify(matchers)})
+										RETURN n, e
+										UNION
+										MATCH (cur:Process)<-[e]-(n:Process)
+										WHERE id(cur)=${cur.id}
+										RETURN n, e`).then(result => {return result;});
+			}
+			else if (cur.labels.indexOf('Conn') > -1){
+				neighbours = session.run(`MATCH (cur:Conn)-[e]-(n:Global)
+										WHERE
+										id(cur)=${cur.id}
+										AND
+										(
+											NOT n:Pipe
+											OR
+											n.fds <> []
+										)
+										AND
+										NOT ${JSON.stringify(matchers)} is Null
+										AND
+										any(lab in labels(n) WHERE lab IN ${JSON.stringify(matchers)})
+										RETURN n, e`).then(result => {return result;});
+			}
+			if (neighbours == null){
+				continue;
+			}
+			for (row in neighbours){//TODO: translate
+				if ((row['n'] in nodes) != null || 
+					(row['n'] in process_obj.filter( d < (cur_depth - 1)))){
+					continue;
+				}
+				if (cur_depth > 0){
+					process_obj = process_obj.concat((cur_depth - 1, row['n']));
+				}
 			}
 		}
-	}
-	var edata = session.run(`MATCH (a)-[e]-(b) WHERE id(a) IN ${ids} AND id(b) IN ${ids} RETURN DISTINCT e`);
-	//TODO: swap this out
-	//{'ids': [n.id for n in nodes]}).data()
+		//TODO: swap this out
+		//{'ids': [n.id for n in nodes]}).data()
+		var ids = [];
+		for(n in nodes){
+			ids = ids.concat(n.id);
+		}
+		session.run(`MATCH (a)-[e]-(b) WHERE id(a) IN ${JSON.stringify(ids)} AND id(b) IN ${JSON.stringify(ids)} RETURN DISTINCT e`)
+		.then(result => {
+			session.close();
+			var edges = [];
+			for(row in result){
+				edges = edges.concat([row['e']]);
+			}
 
-	var edges = [];
-	for(row in edata){
-		edges.push([row['e']]);
-	}
-
-	return flask.jsonify({'nodes': nodes,
-						  'edges': edges});
+			fn({'nodes': nodes,
+				'edges': edges})
+			// return flask.jsonify({'nodes': nodes,
+			// 					  'edges': edges});
+			});
+		});
 }
 
 function get_detail_id(id, fn){
