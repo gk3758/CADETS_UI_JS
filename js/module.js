@@ -71,7 +71,6 @@ testGraph.cxtmenu(
 						 result.forEach(function(name) {
 							str += `<li>${name}</li>`;  // XXX: requires trusted UI server!
 						 });
-						 console.log(str);
 						 vex.dialog.alert({
 							unsafeMessage: `<h2>Files read:</h2><ul>${str}</ul>`,
 						 });
@@ -401,6 +400,7 @@ function inspect_node(id, err = console.log) {
 
 	//TODO: replace Driver
 	//$.getJSON(`detail/${id}`, function(result) {
+	console.log('test1');
 	get_detail_id(id, function(result) {
 		for (let property in result) {
 			inspector.detail.append(`
@@ -411,7 +411,8 @@ function inspect_node(id, err = console.log) {
 			`)
 		}
 		inspectee = result;
-	}).then(function() {
+		console.log('test2');
+		console.log('test3');
 		// Display the node's immediate connections in the inspector "Graph" panel.
 		get_neighbours(id, function(result) {
 			inspector.graph.remove('node');
@@ -421,7 +422,7 @@ function inspect_node(id, err = console.log) {
 			for (let n of result.nodes) {
 				add_node(n, inspector.graph);
 
-				let meta = graphing.node_metadata(n);
+				let meta = node_metadata(n);
 				inspector.neighbours.append(`
 					<tr>
 						<td><a onclick="import_into_worksheet(${n.id})" style="color: black;"><i class="fa fa-${meta.icon}" aria-hidden="true"></i></a></td>
@@ -442,11 +443,11 @@ function inspect_node(id, err = console.log) {
 
 			// Only use the (somewhat expensive) dagre algorithm when the number of
 			// edges is small enough to be computationally zippy.
-			if (result.edges.length < 100) {
-				layout(inspector.graph, 'dagre');
-			} else {
+			//if (result.edges.length < 100) { TODO: get dagre layout online
+			//	layout(inspector.graph, 'dagre');
+			//} else {
 				layout(inspector.graph, 'cose');
-			}
+			//}
 
 			inspector.graph.zoom({
 				level: 1,
@@ -1070,9 +1071,7 @@ function findEdges(curId, neighbours, fn){
 		//TODO: swap this out
 		//{'ids': [n.id for n in nodes]}).data()
 		var ids = [];
-			console.log(neighbours);
 		for(n in neighbours){
-			console.log(n);
 			ids = ids.concat(n.get('n').id);
 		}
 		session.run(`MATCH (a)-[e]-(b) WHERE id(a) IN ${curId} AND id(b) IN ${JSON.stringify(ids)} RETURN DISTINCT e`)
