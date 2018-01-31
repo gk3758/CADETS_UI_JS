@@ -74,28 +74,31 @@ var driver = neo4j.driver("bolt://localhost", neo4j.auth.basic("neo4j", "abcde")
 
 //Worksheet Graph
 
-var testGraph = cytoscape({
-	container: document.getElementById('worksheetGraph'),
-	boxSelectionEnabled: true,
-	style: cytoscape.stylesheet()
-	.selector('node')
-	.css({
-		'content': 'data(id)',
-		'text-valign': 'center',
-		'color': 'white',
-		'text-outline-width': 2,
-		'background-color': 'red',
-		'text-outline-color': 'black'
-	})
-	.selector('edge')
-	.css({
-		'curve-style': 'bezier',
-		'target-arrow-shape': 'triangle',
-		'target-arrow-color': 'black',
-		'line-color': 'gray',
-		'width': 1
-	}),
-});
+
+
+var testGraph = create('worksheetGraph');
+// cytoscape({
+// 	container: document.getElementById('worksheetGraph'),
+// 	boxSelectionEnabled: true,
+	//style: cytoscape.stylesheet()
+	// .selector('node')
+	// .css({
+	// 	'content': 'data(id)',
+	// 	'text-valign': 'center',
+	// 	'color': 'white',
+	// 	'text-outline-width': 2,
+	// 	'background-color': 'red',
+	// 	'text-outline-color': 'black'
+	// })
+	// .selector('edge')
+	// .css({
+	// 	'curve-style': 'bezier',
+	// 	'target-arrow-shape': 'triangle',
+	// 	'target-arrow-color': 'black',
+	// 	'line-color': 'gray',
+	// 	'width': 1
+	// }),
+//});
 
 var worksheetGraph = {
 	graph: testGraph

@@ -14,14 +14,14 @@
 // Create a new graph.
 //
 function create(container) {
-	let graph = cytoscape({
-		container: container,
+	var graph = cytoscape({
+		container: document.getElementById(container),
 		boxSelectionEnabled: true,
 	});
 
 	load_graph_style([ graph ]);
 
-	graph.add_node = function(node) { add_node(node, graph); };
+	// //graph.add_node = function(node) { add_node(node, graph); };
 
 	return graph;
 }
