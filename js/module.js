@@ -128,7 +128,7 @@ var machineGraph = create('machineGraph');
 // 		'text-valign': 'top',
 // 		'color': 'white',
 // 		'text-outline-width': 2,
-// 		'background-color': 'red',
+// 		'background-color': 'blue',
 // 		'text-outline-color': 'black'
 // 	})
 // 	.selector('edge')

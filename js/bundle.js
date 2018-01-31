@@ -187,56 +187,56 @@ testGraph.cxtmenu(
 
 //Machine Graph
 
-var machineGraph = cytoscape({
-	container: document.getElementById('machineGraph'),
-	style: cytoscape.stylesheet()
-	.selector('node')
-	.css({
-		'content': 'data(ips)',
-		'text-valign': 'top',
-		'color': 'white',
-		'text-outline-width': 2,
-		'background-color': 'red',
-		'text-outline-color': 'black'
-	})
-	.selector('edge')
-	.css({
-		'curve-style': 'bezier',
-		'target-arrow-shape': 'triangle',
-		'target-arrow-color': 'black',
-		'line-color': 'gray',
-		'width': 1
-	})
-});
-
-setup_machines();
+var machineGraph = create('machineGraph');
+// var machineGraph = cytoscape({
+// 	container: document.getElementById('machineGraph'),
+// 	style: cytoscape.stylesheet()
+// 	.selector('node')
+// 	.css({
+// 		'content': 'data(ips)',
+// 		'text-valign': 'top',
+// 		'color': 'white',
+// 		'text-outline-width': 2,
+// 		'background-color': 'blue',
+// 		'text-outline-color': 'black'
+// 	})
+// 	.selector('edge')
+// 	.css({
+// 		'curve-style': 'bezier',
+// 		'target-arrow-shape': 'triangle',
+// 		'target-arrow-color': 'black',
+// 		'line-color': 'gray',
+// 		'width': 1
+// 	})
+// });
 
 //Machine Graph end
 
 //inspector Graph
 
 
-var inspectorGraph = cytoscape({
-	container: document.getElementById('inspectorGraph'),
-	style: cytoscape.stylesheet()
-	.selector('node')
-	.css({
-		'content': 'data(id)',
-		'text-valign': 'center',
-		'color': 'white',
-		'text-outline-width': 2,
-		'background-color': 'red',
-		'text-outline-color': 'black'
-	})
-	.selector('edge')
-	.css({
-		'curve-style': 'bezier',
-		'target-arrow-shape': 'triangle',
-		'target-arrow-color': 'black',
-		'line-color': 'gray',
-		'width': 1
-	})
-});
+var inspectorGraph = create('inspectorGraph');
+// var inspectorGraph = cytoscape({
+// 	container: document.getElementById('inspectorGraph'),
+// 	style: cytoscape.stylesheet()
+// 	.selector('node')
+// 	.css({
+// 		'content': 'data(id)',
+// 		'text-valign': 'center',
+// 		'color': 'white',
+// 		'text-outline-width': 2,
+// 		'background-color': 'red',
+// 		'text-outline-color': 'black'
+// 	})
+// 	.selector('edge')
+// 	.css({
+// 		'curve-style': 'bezier',
+// 		'target-arrow-shape': 'triangle',
+// 		'target-arrow-color': 'black',
+// 		'line-color': 'gray',
+// 		'width': 1
+// 	})
+// });
 
 var inspector = {
 	detail: $('#inspector-detail'),
@@ -280,6 +280,8 @@ inspectorGraph.cxtmenu({
 
 //run
 
+
+	setup_machines();
 	insector_query('552408');
 
 	$('input[id *= "filter"],select[id *= "filter"]').on('change', update_nodelist);
