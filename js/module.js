@@ -179,7 +179,6 @@ inspectorGraph.cxtmenu({
 		{
 			content: 'Import node',//TODO: get it working
 			select: function(ele){
-				//console.log(ele.data('id'));
 				import_into_worksheet(ele.data('id'));		
 		}
 		},
@@ -192,7 +191,6 @@ inspectorGraph.cxtmenu({
 		{
 			content: 'Inspect',//TODO: get it working
 			select: function(ele){
-				//console.log(ele);
 				inspect_node(ele.data("id"));
 		}
 		},
@@ -400,7 +398,6 @@ function inspect_node(id, err = console.log) {
 
 	//TODO: replace Driver
 	//$.getJSON(`detail/${id}`, function(result) {
-	console.log('test1');
 	get_detail_id(id, function(result) {
 		for (let property in result) {
 			inspector.detail.append(`
@@ -411,8 +408,6 @@ function inspect_node(id, err = console.log) {
 			`)
 		}
 		inspectee = result;
-		console.log('test2');
-		console.log('test3');
 		// Display the node's immediate connections in the inspector "Graph" panel.
 		get_neighbours(id, function(result) {
 			inspector.graph.remove('node');
@@ -528,9 +523,9 @@ function update_nodelist(err = console.log) {
 
 					nodelist.append(`
 						<tr class="${rowColour(colour)}">
-							<td><a onclick="inspect_node(${node.id})" style="color: black;"><i class="fa fa-${meta.icon}" aria-hidden="true"></i></a></td>
+							<td><a onclick="inspect_node(${node.id});" style="color: black;"><i class="fa fa-${meta.icon}" aria-hidden="true"></i></a></td>
 							<td>${meta.timestamp}</td>
-							<td><a onclick="inspect_node(${node.id})">${meta.label}</a></td>
+							<td><a onclick="inspect_node(${node.id});">${meta.label}</a></td>
 						</tr>`);
 				}
 			});//.fail(err);
@@ -782,7 +777,6 @@ function setup_machines() {
 	session.run("MATCH (m:Machine) RETURN m")
 	.then(result => {result.records.forEach(function (record) 
 		{
-			//console.log(record.get('m'));
 			var nodeData = parseNeo4jNode(record.get('m'));
 			add_node(nodeData, machineGraph);
 		});
@@ -790,7 +784,6 @@ function setup_machines() {
 	session.run("MATCH (:Machine)-[e]->(:Machine) RETURN DISTINCT e")
 	.then(result => {result.records.forEach(function (record) 
 		{
-			//console.log(record.get('e'));
 			var temp = record.get('e');
 			machineGraph.add([
 				{ group: "edges", data: {
@@ -1087,7 +1080,6 @@ function findEdges(curId, neighbours, fn){
 			var edges = [];
 			result.records.forEach(function (record) 
 			{
-				console.log(record);
 				edges = edges.concat(parseNeo4jEdge(record.get('e')));
 			});
 			// for(row in result){
