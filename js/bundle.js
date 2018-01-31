@@ -1073,6 +1073,7 @@ function successors_query(dbid, max_depth=4, files=true, sockets=true, pipes=tru
 										WHERE id(cur)=${dbid}
 										RETURN n, e`)
 				.then(result => {
+					session.close();
 					findEdges(dbid, result.records, fn);
 				});
 			}
@@ -1098,6 +1099,7 @@ function successors_query(dbid, max_depth=4, files=true, sockets=true, pipes=tru
 										WHERE id(cur)=${dbid}
 										RETURN n, e`)
 				.then(result => {
+					session.close();
 					findEdges(dbid, result.records, fn);
 				});
 			}
@@ -1117,6 +1119,7 @@ function successors_query(dbid, max_depth=4, files=true, sockets=true, pipes=tru
 										any(lab in labels(n) WHERE lab IN ${JSON.stringify(matchers)})
 										RETURN n, e`)
 				.then(result => {
+					session.close();
 					findEdges(dbid, result.records, fn);
 				});
 			}
@@ -1137,19 +1140,28 @@ function successors_query(dbid, max_depth=4, files=true, sockets=true, pipes=tru
 }
 
 function findEdges(curId, neighbours, fn){
+		var session = driver.session();
 		//TODO: swap this out
 		//{'ids': [n.id for n in nodes]}).data()
 		var ids = [];
-		for(n in neighbours){
-			ids = ids.concat(n.get('n').id);
-		}
-		session.run(`MATCH (a)-[e]-(b) WHERE id(a) IN ${curId} AND id(b) IN ${JSON.stringify(ids)} RETURN DISTINCT e`)
+		var nodes = [];
+		neighbours.forEach(function (record) 
+		{
+			nodes = nodes.concat(parseNeo4jNode(record.get('n')));
+			ids = ids.concat(record.get('n')['identity']['low']);
+		});
+		session.run(`MATCH (a)-[e]-(b) WHERE id(a) = ${curId} AND id(b) IN ${JSON.stringify(ids)} RETURN DISTINCT e`)
 		.then(result => {
 			session.close();
 			var edges = [];
-			for(row in result){
-				edges = edges.concat(row.get('e'));
-			}
+			result.records.forEach(function (record) 
+			{
+				console.log(record);
+				edges = edges.concat(parseNeo4jEdge(record.get('e')));
+			});
+			// for(row in result){
+			// 	edges = edges.concat(row.get('e'));
+			// }
 			fn({'nodes': nodes,
 				'edges': edges})
 			// return flask.jsonify({'nodes': nodes,
