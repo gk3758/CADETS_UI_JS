@@ -214,14 +214,13 @@ inspectorGraph.cxtmenu({
 //run
 
 	setup_machines();
-	inspect_node('552408');
 
 	$('input[id *= "filter"],select[id *= "filter"]').on('change', update_nodelist);
 
 	$('input[id *= "inspect"]').on('change', function() {
 	  const node = inspector.graph.inspectee;
 	  if (node && !node.empty()) {
-	    inspect_node(node.id());
+		inspect_node(node.id());
 	  }
 	});
 //run end
@@ -416,12 +415,27 @@ function inspect_node(id, err = console.log) {
 				add_node(n, inspector.graph);
 
 				let meta = node_metadata(n);
-				inspector.neighbours.append(`
-					<tr>
-						<td><a onclick="import_into_worksheet(${n.id})" style="color: black;"><i class="fa fa-${meta.icon}" aria-hidden="true"></i></a></td>
-						<td><a onclick="import_into_worksheet(${n.id})">${meta.label}</a></td>
-					</tr>
-				`);
+				// inspector.neighbours.append(`
+				// 	<tr>
+				// 		<td><a onclick="import_into_worksheet(${n.id})" style="color: black;"><i class="fa fa-${meta.icon}" aria-hidden="true"></i></a></td>
+				// 		<td><a onclick="import_into_worksheet(${n.id})">${meta.label}</a></td>
+				// 	</tr>
+				// `);
+
+
+				var table = document.getElementById("neighbour-detail");
+
+				var row = table.insertRow(0);
+				//row.setAttribute("data-myID", items[i].id);
+				row.onclick = (function() {
+					//console.log("test");
+					import_into_worksheet(n.id);
+				});
+				var cell = row.insertCell(0);
+				cell.innerHTML = (`
+								<td><a style="color: black;"><i class="fa fa-${meta.icon}" aria-hidden="true"></i></a></td>
+								<td><a>${meta.label}</a></td>
+								`);
 			}
 
 			for (let e of result.edges) {
@@ -502,12 +516,27 @@ function update_nodelist(err = console.log) {
 						current_uuid = node.uuid;
 					}
 
-					nodelist.append(`
-						<tr class="${rowColour(colour)}">
-							<td><a onclick="inspect_node(${node.id});" style="color: black;"><i class="fa fa-${meta.icon}" aria-hidden="true"></i></a></td>
-							<td>${meta.timestamp}</td>
-							<td><a onclick="inspect_node(${node.id});">${meta.label}</a></td>
-						</tr>`);
+					// nodelist.append(`
+					// 	<tr class="${rowColour(colour)}">
+					// 		<td><a onclick="inspect_node(${node.id});" style="color: black;"><i class="fa fa-${meta.icon}" aria-hidden="true"></i></a></td>
+					// 		<td>${meta.timestamp}</td>
+					// 		<td><a onclick="inspect_node(${node.id});">${meta.label}</a></td>
+					// 	</tr>`);
+
+					var table = document.getElementById("nodelist");
+
+					var row = table.insertRow(0);
+					//row.setAttribute("data-myID", items[i].id);
+					row.onclick = (function() {
+						//console.log("test");
+						inspect_node(node.id);
+					});
+					var cell = row.insertCell(0);
+					cell.innerHTML = (`
+										<td><a style="color: black;"><i class="fa fa-${meta.icon}" aria-hidden="true"></i></a></td>
+										<td>${meta.timestamp}</td>
+										<td><a>${meta.label}</a></td>
+						`);
 				}
 			});//.fail(err);
 }
