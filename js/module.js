@@ -5,31 +5,7 @@ var driver = neo4j.driver("bolt://localhost", neo4j.auth.basic("neo4j", "abcde")
 
 //Worksheet Graph
 
-
-
 var testGraph = create('worksheetGraph');
-// cytoscape({
-// 	container: document.getElementById('worksheetGraph'),
-// 	boxSelectionEnabled: true,
-	//style: cytoscape.stylesheet()
-	// .selector('node')
-	// .css({
-	// 	'content': 'data(id)',
-	// 	'text-valign': 'center',
-	// 	'color': 'white',
-	// 	'text-outline-width': 2,
-	// 	'background-color': 'red',
-	// 	'text-outline-color': 'black'
-	// })
-	// .selector('edge')
-	// .css({
-	// 	'curve-style': 'bezier',
-	// 	'target-arrow-shape': 'triangle',
-	// 	'target-arrow-color': 'black',
-	// 	'line-color': 'gray',
-	// 	'width': 1
-	// }),
-//});
 
 var worksheetGraph = {
 	graph: testGraph
@@ -54,7 +30,7 @@ testGraph.cxtmenu(
 			}
 		},
 		{
-			content: 'Import successors',//TODO: ask has to change code
+			content: 'Import successors',//TODO: check if correct
 			select: function(ele){
 			successors(ele.data('id'));
 			}
@@ -124,7 +100,6 @@ var machineGraph = create('machineGraph');
 
 //inspector Graph
 
-
 var inspectorGraph = create('inspectorGraph');
 
 var inspector = {
@@ -169,14 +144,17 @@ inspectorGraph.cxtmenu({
 
 //run
 
-
 	setup_machines();
-	insector_query('552408');
+	inspect_node('552408');
 
 	$('input[id *= "filter"],select[id *= "filter"]').on('change', update_nodelist);
 
-	update_nodelist();
-
+	$('input[id *= "inspect"]').on('change', function() {
+	  const node = inspector.graph.inspectee;
+	  if (node && !node.empty()) {
+	    inspect_node(node.id());
+	  }
+	});
 //run end
 
 //Functions
@@ -653,20 +631,6 @@ function parseNeo4jEdge(o){
 
 //Queries
 
-
-function insector_query(id){
-	var session = driver.session();
-	session.run(`MATCH (p:Process) WHERE id(p) = ${id} RETURN p`)
-	.then(result => {return result.records.forEach(function (record) 
-		{
-			var nodeData = parseNeo4jNode(record.get('p'));
-			add_node(nodeData, inspectorGraph);
-			add_node(nodeData, testGraph);
-		});
-		session.close();
-	});
-}
-
 function file_read_query(id, fn){
 	var session = driver.session();
 	session.run(`MATCH (n:Process)<-[e:PROC_OBJ]-(c:File)
@@ -712,24 +676,18 @@ function setup_machines() {
 			var nodeData = parseNeo4jNode(record.get('m'));
 			add_node(nodeData, machineGraph);
 		});
-	});
-	session.run("MATCH (:Machine)-[e]->(:Machine) RETURN DISTINCT e")
-	.then(result => {result.records.forEach(function (record) 
-		{
-			var temp = record.get('e');
-			machineGraph.add([
-				{ group: "edges", data: {
-					id: temp['identity']['low'],
-					source: temp['start']['low'], 
-					target: temp['end']['low']}}
-			])
+		session.run("MATCH (:Machine)-[e]->(:Machine) RETURN DISTINCT e")
+		.then(result => {result.records.forEach(function (record) 
+			{
+				var edgeData = parseNeo4jEdge(record.get('e'));
+				add_edge(edgeData, machineGraph);
+			});
+			session.close();
 		});
-		session.close();
+		layout( machineGraph, 'cose');
 	});
-	layout( machineGraph, 'cose');
 }
 
-//the int one
 function get_neighbours_id(id, fn, files=true, sockets=true, pipes=true, process_meta=true){
 	var session = driver.session();
 	var neighbours;
@@ -816,7 +774,7 @@ function get_neighbours_id(id, fn, files=true, sockets=true, pipes=true, process
 				}
 			});
 		}
-		for(row in neighbours){//maybe cause issues where it is not inside then
+		for(row in neighbours){//maybe cause issues where it is not inside the the async
 			neighbour_nodes = neighbour_nodes.concat(parseNeo4jNode(neighbours[row].get('d')));
 			neighbour_edges = neighbour_edges.concat(parseNeo4jEdge(neighbours[row].get('e')));
 		}
@@ -826,7 +784,6 @@ function get_neighbours_id(id, fn, files=true, sockets=true, pipes=true, process
 	});
 }
 
-// //the string one
 // function get_neighbours_uuid(uuid, files=True, sockets=True, pipes=True, process_meta=True){
 // 	var matchers = ['Machine', 'Process', 'Conn'];
 // 	if (files){
@@ -995,8 +952,6 @@ function successors_query(dbid, max_depth=4, files=true, sockets=true, pipes=tru
 
 function findEdges(curId, neighbours, fn){
 		var session = driver.session();
-		//TODO: swap this out
-		//{'ids': [n.id for n in nodes]}).data()
 		var ids = [];
 		var nodes = [];
 		neighbours.forEach(function (record) 
@@ -1012,9 +967,6 @@ function findEdges(curId, neighbours, fn){
 			{
 				edges = edges.concat(parseNeo4jEdge(record.get('e')));
 			});
-			// for(row in result){
-			// 	edges = edges.concat(row.get('e'));
-			// }
 			fn({'nodes': nodes,
 				'edges': edges});
 			});
@@ -1232,6 +1184,7 @@ document.getElementById("WorksheetPageBtn").onclick = function () {
 document.getElementById("hideAnalysisWorksheet").onclick = function () { 
 	$('#analysisWorksheet').toggleClass('hide');
 	$('#worksheet').toggleClass('expandedWorksheet');
+	refreshGraph('#worksheetGraph');
 };
 
 document.getElementById("loadGraph").onchange = function () {
@@ -1250,8 +1203,6 @@ document.getElementById("reDagre").onclick = function () {
 //layout from graphing.js
 document.getElementById("reCose-Bilkent").onclick = function () { 
 	layout( worksheetGraph.graph, 'cose'); //TODO: get cose-bilkent online
-	layout( inspectorGraph, 'cose');
-	layout( machineGraph, 'cose');
 };
 
 //Button logic ends

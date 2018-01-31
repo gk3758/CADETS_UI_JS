@@ -74,31 +74,7 @@ var driver = neo4j.driver("bolt://localhost", neo4j.auth.basic("neo4j", "abcde")
 
 //Worksheet Graph
 
-
-
 var testGraph = create('worksheetGraph');
-// cytoscape({
-// 	container: document.getElementById('worksheetGraph'),
-// 	boxSelectionEnabled: true,
-	//style: cytoscape.stylesheet()
-	// .selector('node')
-	// .css({
-	// 	'content': 'data(id)',
-	// 	'text-valign': 'center',
-	// 	'color': 'white',
-	// 	'text-outline-width': 2,
-	// 	'background-color': 'red',
-	// 	'text-outline-color': 'black'
-	// })
-	// .selector('edge')
-	// .css({
-	// 	'curve-style': 'bezier',
-	// 	'target-arrow-shape': 'triangle',
-	// 	'target-arrow-color': 'black',
-	// 	'line-color': 'gray',
-	// 	'width': 1
-	// }),
-//});
 
 var worksheetGraph = {
 	graph: testGraph
@@ -111,19 +87,19 @@ testGraph.cxtmenu(
 	selector: 'node',
 	commands: [
 		{
-			content: 'Inspect',//TODO: get it working / needs translating
+			content: 'Inspect',//TODO: get row onclick working
 			select: function(ele){
 				inspect_node(ele.data('id'));
 			}
 		},
 		{
-			content: 'Import neighbours',//TODO: get it working / needs translating
+			content: 'Import neighbours',
 			select: function(ele){
 			import_neighbours_into_worksheet(ele.data('id'));
 			}
 		},
 		{
-			content: 'Import successors',//TODO: get it working / needs translating
+			content: 'Import successors',//TODO: check if correct
 			select: function(ele){
 			successors(ele.data('id'));
 			}
@@ -135,7 +111,7 @@ testGraph.cxtmenu(
 			}
 		},
 		{
-			content: 'Files read',//TODO: get it working / test
+			content: 'Files read',
 			select: function(ele){
 					var id = ele.data('id');
 					file_read_query(id, function(result){
@@ -150,7 +126,7 @@ testGraph.cxtmenu(
 			}
 		},
 		{
-			content: 'Commands',//TODO: get it working / test 
+			content: 'Commands',
 			select: function(ele){
 				var id = ele.data('id');
 				cmd_query(id, function(result) {
@@ -188,55 +164,12 @@ testGraph.cxtmenu(
 //Machine Graph
 
 var machineGraph = create('machineGraph');
-// var machineGraph = cytoscape({
-// 	container: document.getElementById('machineGraph'),
-// 	style: cytoscape.stylesheet()
-// 	.selector('node')
-// 	.css({
-// 		'content': 'data(ips)',
-// 		'text-valign': 'top',
-// 		'color': 'white',
-// 		'text-outline-width': 2,
-// 		'background-color': 'blue',
-// 		'text-outline-color': 'black'
-// 	})
-// 	.selector('edge')
-// 	.css({
-// 		'curve-style': 'bezier',
-// 		'target-arrow-shape': 'triangle',
-// 		'target-arrow-color': 'black',
-// 		'line-color': 'gray',
-// 		'width': 1
-// 	})
-// });
 
 //Machine Graph end
 
 //inspector Graph
 
-
 var inspectorGraph = create('inspectorGraph');
-// var inspectorGraph = cytoscape({
-// 	container: document.getElementById('inspectorGraph'),
-// 	style: cytoscape.stylesheet()
-// 	.selector('node')
-// 	.css({
-// 		'content': 'data(id)',
-// 		'text-valign': 'center',
-// 		'color': 'white',
-// 		'text-outline-width': 2,
-// 		'background-color': 'red',
-// 		'text-outline-color': 'black'
-// 	})
-// 	.selector('edge')
-// 	.css({
-// 		'curve-style': 'bezier',
-// 		'target-arrow-shape': 'triangle',
-// 		'target-arrow-color': 'black',
-// 		'line-color': 'gray',
-// 		'width': 1
-// 	})
-// });
 
 var inspector = {
 	detail: $('#inspector-detail'),
@@ -249,25 +182,25 @@ inspectorGraph.cxtmenu({
 	selector: 'node',
 	commands: [
 		{
-			content: 'Import node',//TODO: get it working
+			content: 'Import node',//TODO: get row onclick working
 			select: function(ele){
 				import_into_worksheet(ele.data('id'));		
 		}
 		},
 		{
-			content: 'Import neighbours',//TODO: get it working
+			content: 'Import neighbours',
 			select: function(ele){
 				import_neighbours_into_worksheet(ele.data('id'));
 		}
 		},
 		{
-			content: 'Inspect',//TODO: get it working
+			content: 'Inspect',//TODO: get row onclick working
 			select: function(ele){
 				inspect_node(ele.data("id"));
 		}
 		},
 		{
-			content: 'Import and Inspect',//TODO: get it working
+			content: 'Import and Inspect',//TODO: get row onclick working
 			select: function(ele){
 				inspect_and_import(ele.data('id'));
 		}
@@ -280,14 +213,17 @@ inspectorGraph.cxtmenu({
 
 //run
 
-
 	setup_machines();
-	insector_query('552408');
+	inspect_node('552408');
 
 	$('input[id *= "filter"],select[id *= "filter"]').on('change', update_nodelist);
 
-	update_nodelist();
-
+	$('input[id *= "inspect"]').on('change', function() {
+	  const node = inspector.graph.inspectee;
+	  if (node && !node.empty()) {
+	    inspect_node(node.id());
+	  }
+	});
 //run end
 
 //Functions
@@ -309,7 +245,7 @@ function remove_neighbours_from_worksheet(id) {
 	}).remove();
 }
 
-function toggle_node_importance(id) {//TODO: add important class
+function toggle_node_importance(id) {
 	nodes = worksheetGraph.graph.nodes(`node#${id}`);
 	nodes.forEach( function(ele){
 		if (ele.hasClass('important')) {
@@ -319,9 +255,6 @@ function toggle_node_importance(id) {//TODO: add important class
 		}
 	});
 }
-
-//TODO: replace update with js diver
-/*********************************************************************************/
 
 function command_clicked(dbid) {
 	inspect_and_import(dbid);
@@ -370,8 +303,6 @@ function get_neighbours(id, fn) {
 							pipes = $('#inspectPipes').is(':checked'),
 							process_meta = $('#inspectProcessMeta').is(':checked')
 							);
-
-	// return $.getJSON(`neighbours/${id}?${query}`, fn).fail(err);
 }
 
 //
@@ -385,8 +316,6 @@ function get_successors(id, fn, err = console.log) {
 					pipes = $('#inspectPipes').is(':checked'),
 					process_meta = $('#inspectProcessMeta').is(':checked'),
 					fn);
-
-	// return $.getJSON(`successors/${id}?${query}`, fn).fail(err);
 }
 
 //
@@ -405,8 +334,6 @@ function import_into_worksheet(id, err = console.log) {
 		y: graph.height() / 2,
 	};
 
-	//TODO: make worksheet detail func first then use it here check if it is the right one
-	//return $.getJSON(`detail/${id}`, function(result) {
 	get_detail_id(id, function(result) {
 		let promise = null;
 
@@ -469,9 +396,6 @@ function inspect_node(id, err = console.log) {
 	inspector.detail.empty();
 	inspector.neighbours.empty();
 
-
-	//TODO: replace Driver
-	//$.getJSON(`detail/${id}`, function(result) {
 	get_detail_id(id, function(result) {
 		for (let property in result) {
 			inspector.detail.append(`
@@ -548,10 +472,6 @@ function successors(id) {
 		for (let e of result.edges) {
 			add_edge(e, graph);
 		}
-		//
-		//***** old cxt menus
-		//
-		//attach_context_menu(graph, '#worksheet', worksheet_context_items);
 	});
 }
 
@@ -559,19 +479,6 @@ function successors(id) {
 // Populate node list.
 //
 function update_nodelist(err = console.log) {
-	// let query = {
-	// 	node_type: $('#filterNodeType').val(),
-	// 	name: $('#filterName').val(),
-	// 	host: $('#filterHost').val(),
-	// 	local_ip: $('#filterLocalIp').val(),
-	// 	local_port: $('#filterLocalPort').val(),
-	// 	remote_ip: $('#filterRemoteIp').val(),
-	// 	remote_port: $('#filterRemotePort').val(),
-	// };
-
-	//TODO: replace Driver
-	//$.getJSON('nodes', query,
-
 	get_nodes(node_type = $('#filterNodeType').val(),
 			name = $('#filterName').val(),
 			host = $('#filterHost').val(),
@@ -622,8 +529,6 @@ function rowColour(n) {
 	}
 }
 
-/*********************************************************************************/
-
 function openPage(pageId){
 	$('#machinePage').css('display', 'none');
 	$('#notificationPage').css('display', 'none');
@@ -635,6 +540,7 @@ function refreshGraph(graphId){
 	$(graphId).css('height', '99%');
 	$(graphId).css('height', '100%');
 }
+
 
 //Functions end
 
@@ -794,20 +700,6 @@ function parseNeo4jEdge(o){
 
 //Queries
 
-
-function insector_query(id){
-	var session = driver.session();
-	session.run(`MATCH (p:Process) WHERE id(p) = ${id} RETURN p`)
-	.then(result => {return result.records.forEach(function (record) 
-		{
-			var nodeData = parseNeo4jNode(record.get('p'));
-			add_node(nodeData, inspectorGraph);
-			add_node(nodeData, testGraph);
-		});
-		session.close();
-	});
-}
-
 function file_read_query(id, fn){
 	var session = driver.session();
 	session.run(`MATCH (n:Process)<-[e:PROC_OBJ]-(c:File)
@@ -826,7 +718,6 @@ function file_read_query(id, fn){
 		});
 		fn(files);
 	});
-	//return flask.jsonify({'names': sorted({name for row in files for name in row['g_name']})})
 }
 
 function cmd_query(id, fn){
@@ -854,24 +745,18 @@ function setup_machines() {
 			var nodeData = parseNeo4jNode(record.get('m'));
 			add_node(nodeData, machineGraph);
 		});
-	});
-	session.run("MATCH (:Machine)-[e]->(:Machine) RETURN DISTINCT e")
-	.then(result => {result.records.forEach(function (record) 
-		{
-			var temp = record.get('e');
-			machineGraph.add([
-				{ group: "edges", data: {
-					id: temp['identity']['low'],
-					source: temp['start']['low'], 
-					target: temp['end']['low']}}
-			])
+		session.run("MATCH (:Machine)-[e]->(:Machine) RETURN DISTINCT e")
+		.then(result => {result.records.forEach(function (record) 
+			{
+				var edgeData = parseNeo4jEdge(record.get('e'));
+				add_edge(edgeData, machineGraph);
+			});
+			session.close();
 		});
-		session.close();
+		layout( machineGraph, 'cose');
 	});
-	layout( machineGraph, 'cose');
 }
 
-//the int one
 function get_neighbours_id(id, fn, files=true, sockets=true, pipes=true, process_meta=true){
 	var session = driver.session();
 	var neighbours;
@@ -958,19 +843,16 @@ function get_neighbours_id(id, fn, files=true, sockets=true, pipes=true, process
 				}
 			});
 		}
-		for(row in neighbours){//maybe cause issues where it is not inside then
+		for(row in neighbours){//maybe cause issues where it is not inside the the async
 			neighbour_nodes = neighbour_nodes.concat(parseNeo4jNode(neighbours[row].get('d')));
 			neighbour_edges = neighbour_edges.concat(parseNeo4jEdge(neighbours[row].get('e')));
 		}
 		session.close();
 		fn({nodes: neighbour_nodes,
 				edges: neighbour_edges});
-		// return ({nodes: neighbour_nodes,
-		// 		edges: neighbour_edges});
 	});
 }
 
-// //the string one
 // function get_neighbours_uuid(uuid, files=True, sockets=True, pipes=True, process_meta=True){
 // 	var matchers = ['Machine', 'Process', 'Conn'];
 // 	if (files){
@@ -1016,7 +898,7 @@ function get_neighbours_id(id, fn, files=true, sockets=true, pipes=true, process
 // 	// 					  'edges': {row['e'] for row in res}});
 // }
 
-//needs proper translation
+
 function successors_query(dbid, max_depth=4, files=true, sockets=true, pipes=true, process_meta=true, fn){
 	var matchers = [];
 	if (files){
@@ -1139,8 +1021,6 @@ function successors_query(dbid, max_depth=4, files=true, sockets=true, pipes=tru
 
 function findEdges(curId, neighbours, fn){
 		var session = driver.session();
-		//TODO: swap this out
-		//{'ids': [n.id for n in nodes]}).data()
 		var ids = [];
 		var nodes = [];
 		neighbours.forEach(function (record) 
@@ -1156,13 +1036,8 @@ function findEdges(curId, neighbours, fn){
 			{
 				edges = edges.concat(parseNeo4jEdge(record.get('e')));
 			});
-			// for(row in result){
-			// 	edges = edges.concat(row.get('e'));
-			// }
 			fn({'nodes': nodes,
-				'edges': edges})
-			// return flask.jsonify({'nodes': nodes,
-			// 					  'edges': edges});
+				'edges': edges});
 			});
 }
 
@@ -1176,7 +1051,6 @@ function get_detail_id(id, fn){
 		session.close();
 		fn(parseNeo4jNode(result.records[0].get('n')));
 	});
-	//return flask.jsonify(query['n'])
 }
 function get_detail_id_unparsed(id, fn){
 	var session = driver.session();
@@ -1188,7 +1062,6 @@ function get_detail_id_unparsed(id, fn){
 		session.close();
 		fn(result.records[0].get('n'));
 	});
-	//return flask.jsonify(query['n'])
 }
 
 // function get_detail_uuid(**kwargs){
@@ -1356,7 +1229,6 @@ function get_nodes(node_type=null,
 		});
 		fn(nodes);
 	 });
-		//flask.jsonify([row['n'] for row in query.data()])
 }
 
 //Queries end
@@ -1381,6 +1253,7 @@ document.getElementById("WorksheetPageBtn").onclick = function () {
 document.getElementById("hideAnalysisWorksheet").onclick = function () { 
 	$('#analysisWorksheet').toggleClass('hide');
 	$('#worksheet').toggleClass('expandedWorksheet');
+	refreshGraph('#worksheetGraph');
 };
 
 document.getElementById("loadGraph").onchange = function () {
@@ -1399,8 +1272,6 @@ document.getElementById("reDagre").onclick = function () {
 //layout from graphing.js
 document.getElementById("reCose-Bilkent").onclick = function () { 
 	layout( worksheetGraph.graph, 'cose'); //TODO: get cose-bilkent online
-	layout( inspectorGraph, 'cose');
-	layout( machineGraph, 'cose');
 };
 
 //Button logic ends
